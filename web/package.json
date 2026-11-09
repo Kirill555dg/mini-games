@@ -1,0 +1,25 @@
+{
+  "name": "mini-games-web",
+  "private": true,
+  "type": "module",
+  "packageManager": "bun@1.2.21",
+  "scripts": {
+    "generate": "bun generate.ts",
+    "build": "bun build.ts",
+    "lint": "biome check . && bun check-boundaries.ts",
+    "format": "biome check --write .",
+    "typecheck": "tsc --noEmit",
+    "check": "bun run lint && bun run typecheck && bun run test",
+    "test": "bun test"
+  },
+  "dependencies": {
+    "preact": "11.2.0",
+    "openapi-fetch": "0.17.0"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.6.6",
+    "@types/bun": "1.2.21",
+    "openapi-typescript": "7.13.0",
+    "typescript": "5.9.3"
+  }
+}

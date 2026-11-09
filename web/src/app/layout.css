@@ -1,0 +1,118 @@
+@layer layout {
+  .site-header {
+    min-height: 76px;
+    display: flex;
+    align-items: center;
+    gap: var(--space-8);
+    padding: 0 max(24px, calc((100vw - 1120px) / 2));
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+  }
+  .brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 700;
+    font-size: 20px;
+    letter-spacing: -0.4px;
+    white-space: nowrap;
+  }
+  .brand[aria-disabled="true"] {
+    pointer-events: none;
+  }
+  nav {
+    display: flex;
+    gap: 6px;
+    flex: 1;
+  }
+  nav a {
+    padding: 8px 13px;
+    border-radius: 8px;
+    color: var(--muted);
+    font-weight: 550;
+  }
+  nav a:hover,
+  nav a[aria-current="page"] {
+    background: var(--canvas);
+    color: var(--ink);
+  }
+  main {
+    width: min(1120px, calc(100% - 48px));
+    margin: 0 auto;
+    padding: 42px 0 24px;
+    flex: 1;
+  }
+  main:focus {
+    outline: none;
+  }
+  .site-footer {
+    padding: 16px 20px 20px;
+    text-align: center;
+    color: var(--muted);
+    font-size: 12px;
+  }
+  .page-heading {
+    display: grid;
+    gap: 10px;
+  }
+  .home-heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 24px;
+    margin-bottom: 28px;
+  }
+  .game-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px;
+  }
+  .section-heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  .room-list {
+    margin-top: 40px;
+  }
+  .reading-page,
+  .status-page {
+    max-width: 820px;
+    margin: 0 auto;
+  }
+  .reading-page .page-heading,
+  .status-page .page-heading,
+  .history-page .page-heading {
+    margin-bottom: 32px;
+  }
+  .rule-section {
+    padding: 24px 0;
+    border-top: 1px solid var(--border);
+  }
+  .rule-section h2 {
+    margin-bottom: 12px;
+  }
+  .rule-section p + p {
+    margin-top: 12px;
+  }
+  .entry-page {
+    max-width: 620px;
+    margin: 0 auto;
+  }
+  .breadcrumb {
+    display: inline-block;
+    color: var(--muted);
+    margin-bottom: 20px;
+    text-decoration: underline;
+    text-underline-offset: 4px;
+  }
+  .entry-form {
+    margin-top: 28px;
+    padding: 28px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface);
+  }
+}

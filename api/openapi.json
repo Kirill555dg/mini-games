@@ -1,0 +1,759 @@
+{
+  "components": {
+    "schemas": {
+      "engine_Move": {
+        "additionalProperties": false,
+        "properties": {
+          "boxes": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array"
+          },
+          "cell": {
+            "type": "integer"
+          },
+          "hit": {
+            "type": "boolean"
+          },
+          "player": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "player",
+          "cell"
+        ],
+        "type": "object"
+      },
+      "engine_Spec": {
+        "additionalProperties": false,
+        "properties": {
+          "description": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "maxPlayers": {
+            "type": "integer"
+          },
+          "minPlayers": {
+            "type": "integer"
+          },
+          "rules": {
+            "type": "string"
+          },
+          "sides": {
+            "additionalProperties": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "type": "object"
+          },
+          "sizes": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array"
+          },
+          "title": {
+            "type": "string"
+          },
+          "translations": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/engine_Translation"
+            },
+            "type": "object"
+          }
+        },
+        "required": [
+          "id",
+          "translations",
+          "sides",
+          "title",
+          "description",
+          "rules",
+          "minPlayers",
+          "maxPlayers"
+        ],
+        "type": "object"
+      },
+      "engine_State": {
+        "additionalProperties": false,
+        "properties": {
+          "board": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array"
+          },
+          "boxes": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array"
+          },
+          "enemy": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array"
+          },
+          "fleet": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array"
+          },
+          "height": {
+            "type": "integer"
+          },
+          "line": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array"
+          },
+          "moves": {
+            "items": {
+              "$ref": "#/components/schemas/engine_Move"
+            },
+            "type": "array"
+          },
+          "own": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array"
+          },
+          "phase": {
+            "type": "string"
+          },
+          "ready": {
+            "items": {
+              "type": "boolean"
+            },
+            "type": "array"
+          },
+          "scores": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array"
+          },
+          "turn": {
+            "type": "integer"
+          },
+          "width": {
+            "type": "integer"
+          },
+          "winLength": {
+            "type": "integer"
+          },
+          "winner": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "width",
+          "height",
+          "phase",
+          "turn",
+          "winner"
+        ],
+        "type": "object"
+      },
+      "engine_Translation": {
+        "additionalProperties": false,
+        "properties": {
+          "description": {
+            "type": "string"
+          },
+          "rules": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "title",
+          "description",
+          "rules"
+        ],
+        "type": "object"
+      },
+      "history_Record": {
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "finishedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "game": {
+            "type": "string"
+          },
+          "id": {
+            "type": "integer"
+          },
+          "players": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "size": {
+            "type": "integer"
+          },
+          "state": {
+            "$ref": "#/components/schemas/engine_State"
+          },
+          "winner": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "finishedAt",
+          "code",
+          "game",
+          "size",
+          "players",
+          "winner",
+          "state"
+        ],
+        "type": "object"
+      },
+      "httpapi_ErrorResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "error": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "error"
+        ],
+        "type": "object"
+      },
+      "httpapi_Status": {
+        "additionalProperties": false,
+        "properties": {
+          "startedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "uptimeSeconds": {
+            "type": "integer"
+          },
+          "version": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "startedAt",
+          "uptimeSeconds",
+          "version"
+        ],
+        "type": "object"
+      },
+      "httpapi_VisitResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "ok": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "ok"
+        ],
+        "type": "object"
+      },
+      "rooms_Command": {
+        "additionalProperties": false,
+        "properties": {
+          "action": {
+            "enum": [
+              "accept-swap",
+              "cancel-swap",
+              "create",
+              "enter",
+              "leave",
+              "move",
+              "ready",
+              "seat"
+            ],
+            "type": "string"
+          },
+          "cell": {
+            "type": "integer"
+          },
+          "from": {
+            "type": "string"
+          },
+          "game": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "players": {
+            "type": "integer"
+          },
+          "room": {
+            "type": "string"
+          },
+          "round": {
+            "type": "integer"
+          },
+          "seat": {
+            "type": "integer"
+          },
+          "size": {
+            "type": "integer"
+          },
+          "vertical": {
+            "type": "boolean"
+          },
+          "watch": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "action"
+        ],
+        "type": "object"
+      },
+      "rooms_Lobby": {
+        "additionalProperties": false,
+        "properties": {
+          "games": {
+            "items": {
+              "$ref": "#/components/schemas/engine_Spec"
+            },
+            "type": "array"
+          },
+          "instance": {
+            "type": "string"
+          },
+          "revision": {
+            "type": "integer"
+          },
+          "rooms": {
+            "items": {
+              "$ref": "#/components/schemas/rooms_Summary"
+            },
+            "type": "array"
+          },
+          "totalRooms": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "instance",
+          "revision",
+          "totalRooms",
+          "rooms",
+          "games"
+        ],
+        "type": "object"
+      },
+      "rooms_Seat": {
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "online": {
+            "type": "boolean"
+          },
+          "ready": {
+            "type": "boolean"
+          },
+          "returnBy": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "taken": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "name",
+          "taken",
+          "online",
+          "ready"
+        ],
+        "type": "object"
+      },
+      "rooms_Summary": {
+        "additionalProperties": false,
+        "properties": {
+          "finished": {
+            "type": "boolean"
+          },
+          "game": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "nextRoom": {
+            "type": "string"
+          },
+          "seats": {
+            "items": {
+              "$ref": "#/components/schemas/rooms_Seat"
+            },
+            "type": "array"
+          },
+          "size": {
+            "type": "integer"
+          },
+          "spectators": {
+            "type": "integer"
+          },
+          "started": {
+            "type": "boolean"
+          },
+          "swap": {
+            "$ref": "#/components/schemas/rooms_Swap"
+          }
+        },
+        "required": [
+          "id",
+          "game",
+          "size",
+          "seats",
+          "spectators",
+          "started",
+          "finished"
+        ],
+        "type": "object"
+      },
+      "rooms_Swap": {
+        "additionalProperties": false,
+        "properties": {
+          "from": {
+            "type": "integer"
+          },
+          "to": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "from",
+          "to"
+        ],
+        "type": "object"
+      },
+      "rooms_View": {
+        "additionalProperties": false,
+        "properties": {
+          "instance": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "revision": {
+            "type": "integer"
+          },
+          "role": {
+            "type": "integer"
+          },
+          "room": {
+            "$ref": "#/components/schemas/rooms_Summary"
+          },
+          "round": {
+            "type": "integer"
+          },
+          "state": {
+            "$ref": "#/components/schemas/engine_State"
+          }
+        },
+        "required": [
+          "instance",
+          "revision",
+          "room",
+          "round",
+          "role",
+          "name",
+          "state"
+        ],
+        "type": "object"
+      }
+    }
+  },
+  "info": {
+    "license": {
+      "name": "MIT",
+      "url": "https://opensource.org/license/mit/"
+    },
+    "title": "Mini-games API",
+    "version": "1.0.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/game-api/action": {
+      "post": {
+        "operationId": "sendAction",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/rooms_Command"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/rooms_View"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/httpapi_ErrorResponse"
+                }
+              }
+            },
+            "description": "Request rejected"
+          }
+        }
+      }
+    },
+    "/game-api/events": {
+      "get": {
+        "operationId": "events",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "room",
+            "required": false,
+            "schema": {
+              "pattern": "^[ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789]{6}$",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "text/event-stream": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "SSE state events: Lobby or viewer-specific View; null means room closed"
+          }
+        }
+      }
+    },
+    "/game-api/history": {
+      "get": {
+        "operationId": "getHistory",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/history_Record"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/httpapi_ErrorResponse"
+                }
+              }
+            },
+            "description": "Request rejected"
+          }
+        }
+      }
+    },
+    "/game-api/lobby": {
+      "get": {
+        "operationId": "getLobby",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/rooms_Lobby"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/httpapi_ErrorResponse"
+                }
+              }
+            },
+            "description": "Request rejected"
+          }
+        }
+      }
+    },
+    "/game-api/state": {
+      "get": {
+        "operationId": "getRoom",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "room",
+            "required": true,
+            "schema": {
+              "pattern": "^[ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789]{6}$",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/rooms_View"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/httpapi_ErrorResponse"
+                }
+              }
+            },
+            "description": "Request rejected"
+          }
+        }
+      }
+    },
+    "/game-api/status": {
+      "get": {
+        "operationId": "getStatus",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/httpapi_Status"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/httpapi_ErrorResponse"
+                }
+              }
+            },
+            "description": "Request rejected"
+          }
+        }
+      }
+    },
+    "/game-api/visit": {
+      "post": {
+        "operationId": "trackVisit",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/httpapi_VisitResponse"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "default": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/httpapi_ErrorResponse"
+                }
+              }
+            },
+            "description": "Request rejected"
+          }
+        }
+      }
+    }
+  },
+  "servers": [
+    {
+      "url": "/"
+    }
+  ],
+  "x-game-values": {
+    "draw": -2,
+    "finished": "finished",
+    "noWinner": -1,
+    "playing": "playing",
+    "setup": "setup"
+  },
+  "x-room-actions": {
+    "acceptSwap": "accept-swap",
+    "cancelSwap": "cancel-swap",
+    "create": "create",
+    "enter": "enter",
+    "leave": "leave",
+    "move": "move",
+    "ready": "ready",
+    "seat": "seat"
+  },
+  "x-room-code": {
+    "alphabet": "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789",
+    "length": 6,
+    "maxNameRunes": 24
+  }
+}

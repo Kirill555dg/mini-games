@@ -1,0 +1,552 @@
+@layer responsive {
+  @media (min-width: 1000px) {
+    .game-grid {
+      gap: 20px;
+    }
+  }
+  @media (max-width: 960px) {
+    .site-header {
+      gap: 16px;
+      padding-inline: 24px;
+    }
+    .game-card {
+      gap: 18px;
+      padding: 20px;
+    }
+    .game-card-content h2 {
+      font-size: 19px;
+    }
+    .game-card-content p {
+      font-size: 13px;
+    }
+    .room-layout {
+      gap: 20px;
+      grid-template-columns: minmax(0, 1fr) 180px;
+    }
+  }
+  @media (max-width: 700px) {
+    .site-header {
+      min-height: 96px;
+      padding: 14px 20px 10px;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px 12px;
+    }
+    .brand {
+      font-size: 18px;
+    }
+    nav {
+      grid-column: 1 / -1;
+      grid-row: 2;
+      justify-content: space-between;
+    }
+    nav a {
+      padding: 6px 10px;
+      font-size: 13px;
+    }
+    .connection {
+      grid-column: 2;
+      grid-row: 1;
+    }
+    main {
+      width: calc(100% - 32px);
+      padding-top: 28px;
+    }
+    .home-heading {
+      display: block;
+      margin-bottom: 22px;
+    }
+    .home-heading .button {
+      margin-top: 18px;
+    }
+    .home-heading h1 {
+      font-size: 29px;
+    }
+    .home-heading p {
+      font-size: 13px;
+    }
+    .game-grid {
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
+    .game-card {
+      min-height: 184px;
+      padding: 20px;
+      gap: 22px;
+    }
+    .game-card-content h2 {
+      font-size: 20px;
+    }
+    .game-card-content .button {
+      min-height: 38px;
+      font-size: 12px;
+      padding: 8px 12px;
+    }
+    .room-list {
+      margin-top: 32px;
+    }
+    .room-row {
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .room-description {
+      flex-basis: 65%;
+      order: 3;
+    }
+    .room-row .badge {
+      margin-left: auto;
+    }
+    .entry-form {
+      padding: 22px;
+    }
+    .form-actions {
+      flex-wrap: wrap;
+    }
+    .in-room .site-header {
+      min-height: 52px;
+      display: flex;
+      padding: 10px 16px;
+    }
+    .in-room main {
+      padding-top: 14px;
+    }
+    .room-heading {
+      align-items: flex-start;
+      gap: 12px;
+    }
+    .room-heading h1 {
+      font-size: 21px;
+    }
+    .room-heading .actions {
+      flex-wrap: nowrap;
+      gap: 6px;
+    }
+    .room-heading .button {
+      font-size: 11px;
+      padding: 7px 9px;
+      min-height: 36px;
+    }
+    .game-status {
+      margin: 10px 0;
+      font-size: 13px;
+    }
+    .room-layout {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .room-sidebar {
+      order: -1;
+    }
+    .seat-list {
+      display: flex;
+      gap: 6px;
+    }
+    .seat {
+      padding: 8px;
+      gap: 6px;
+      flex: 1;
+    }
+    .seat-number {
+      width: 22px;
+      height: 22px;
+      font-size: 10px;
+    }
+    .seat strong {
+      font-size: 12px;
+    }
+    .seat-presence {
+      font-size: 10px;
+    }
+    .spectator-count {
+      display: none;
+    }
+    .room-feedback:empty {
+      display: none;
+    }
+    .room-feedback .notice {
+      font-size: 12px;
+      margin: 4px 0 10px;
+      padding: 8px 12px;
+    }
+    .history-filters {
+      gap: 8px;
+    }
+    .history-filters input {
+      width: 43%;
+    }
+    .history-filters select {
+      width: 57%;
+    }
+    .match summary {
+      flex-wrap: wrap;
+      gap: 8px 14px;
+      padding: 16px 0;
+    }
+    .match-code {
+      font-size: 13px;
+    }
+    .match-description {
+      flex-basis: 65%;
+    }
+    .match-result {
+      margin-left: 50px;
+      flex: 1;
+    }
+    .match summary::after {
+      font-size: 16px;
+    }
+    .match-description strong {
+      font-size: 13px;
+    }
+    .match-description .muted {
+      font-size: 12px;
+    }
+    .status-summary {
+      padding: 18px;
+      align-items: flex-start;
+      flex-direction: column;
+    }
+    .status-metrics {
+      gap: 0 16px;
+    }
+    .status-metrics dd {
+      font-size: 18px;
+    }
+    .status-metrics div:nth-child(3) dd {
+      font-size: 14px;
+    }
+    .naval-review {
+      flex-direction: column;
+      align-items: center;
+    }
+    .naval-review > section {
+      width: min(100%, 300px);
+    }
+  }
+  @media (max-width: 380px) {
+    .game-card {
+      gap: 14px;
+      padding: 16px;
+    }
+    .game-card-content h2 {
+      font-size: 18px;
+    }
+    .game-card-content p {
+      font-size: 12px;
+    }
+    .room-heading h1 {
+      font-size: 18px;
+    }
+    .room-heading .button {
+      padding-inline: 7px;
+    }
+    .seat-number {
+      display: none;
+    }
+    .seat {
+      padding: 6px;
+    }
+  }
+  @media (max-height: 520px) and (min-width: 600px) {
+    .in-room .site-header {
+      min-height: 42px;
+      padding-top: 4px;
+      padding-bottom: 4px;
+    }
+    .in-room main {
+      padding-top: 8px;
+      padding-bottom: 0;
+    }
+    .room-heading h1 {
+      font-size: 19px;
+    }
+    .room-meta {
+      margin-top: 0;
+    }
+    .game-status {
+      margin: 4px 0 8px;
+      font-size: 12px;
+      min-height: 18px;
+    }
+    .room-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 170px;
+      gap: 20px;
+    }
+    .room-sidebar {
+      order: 0;
+    }
+    .seat-list {
+      display: grid;
+    }
+    .seat {
+      padding: 8px;
+    }
+    .replay-controls {
+      margin-top: 5px;
+    }
+    .fleet-help {
+      margin: 5px 0;
+    }
+    .fleet-actions {
+      gap: 4px;
+    }
+    .game-controls .button {
+      min-height: 30px;
+      padding: 4px 10px;
+    }
+    .in-room .site-footer {
+      padding: 4px;
+      font-size: 10px;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      /* biome-ignore lint/complexity/noImportantStyles: Respect the user's reduced-motion preference. */
+      scroll-behavior: auto !important;
+      /* biome-ignore lint/complexity/noImportantStyles: Respect the user's reduced-motion preference. */
+      transition: none !important;
+      /* biome-ignore lint/complexity/noImportantStyles: Respect the user's reduced-motion preference. */
+      animation: none !important;
+    }
+  }
+}
+
+@layer responsive {
+  .game-card {
+    min-height: 170px;
+    padding: 20px;
+    gap: 18px;
+  }
+  .game-card-content {
+    flex: 1;
+  }
+  .game-card-content h2 {
+    font-size: 20px;
+  }
+  .game-card-content .button {
+    margin-top: 0;
+  }
+  .game-card-content .actions {
+    margin-top: 4px;
+    gap: 16px;
+  }
+  .site-header {
+    gap: 20px;
+  }
+  .connection {
+    margin-left: 0;
+  }
+  @media (max-width: 960px) {
+    .game-illustration {
+      flex-basis: 98px;
+      width: 98px;
+      height: 81px;
+    }
+    .game-card-title {
+      flex-wrap: wrap;
+      gap: 2px 8px;
+    }
+    .player-count {
+      margin-left: 0;
+    }
+  }
+  @media (max-width: 700px) {
+    .site-header {
+      gap: 10px 12px;
+    }
+    .preferences {
+      grid-column: 2;
+      grid-row: 1;
+    }
+    nav {
+      grid-column: 1;
+      grid-row: 2;
+      justify-content: flex-start;
+    }
+    nav a {
+      padding-inline: 7px;
+    }
+    .connection {
+      grid-column: 2;
+      grid-row: 2;
+      justify-content: flex-end;
+    }
+    .game-card {
+      min-height: 154px;
+      padding: 16px;
+      gap: 16px;
+    }
+    .game-illustration {
+      flex-basis: 88px;
+      width: 88px;
+      height: 73px;
+    }
+    .game-card-title {
+      display: flex;
+      flex-wrap: nowrap;
+      gap: 6px;
+    }
+    .game-card-content h2 {
+      font-size: 17px;
+    }
+    .player-count {
+      margin-left: auto;
+      font-size: 10px;
+    }
+    .game-card-content p {
+      font-size: 12px;
+    }
+    .in-room .brand {
+      font-size: 16px;
+      gap: 8px;
+    }
+    .in-room .brand img {
+      width: 24px;
+      height: 24px;
+    }
+    .in-room .site-header {
+      gap: 8px;
+    }
+    .in-room .preferences {
+      margin-left: auto;
+    }
+    .in-room .connection {
+      font-size: 0;
+      gap: 0;
+    }
+    .room-rules,
+    .spectator-invite {
+      display: none;
+    }
+    .room-sidebar .room-rules {
+      display: block;
+      margin-top: 8px;
+    }
+    .room-sidebar .room-rules:not([open]) {
+      font-size: 11px;
+    }
+    .preparation {
+      gap: 8px;
+    }
+    .seat-presence {
+      overflow-wrap: anywhere;
+    }
+    .room-code-group .room-code {
+      font-size: 18px;
+    }
+  }
+  @media (max-width: 360px) {
+    .game-illustration {
+      flex-basis: 72px;
+      width: 72px;
+      height: 60px;
+    }
+    .game-card-content h2 {
+      font-size: 16px;
+    }
+    .game-card-title {
+      flex-wrap: wrap;
+    }
+  }
+  :root[data-theme="dark"] .button.primary {
+    color: #161329;
+  }
+  :root[data-theme="dark"] .button:hover:not(:disabled) {
+    background: #343b4a;
+  }
+  :root[data-theme="dark"] .button.primary:hover:not(:disabled) {
+    background: var(--primary-hover);
+  }
+  :root[data-theme="dark"] .button.danger {
+    border-color: #714653;
+  }
+  :root[data-theme="dark"] .seat.is-you {
+    background: #302c49;
+    border-color: #7265aa;
+  }
+  :root[data-theme="dark"] .seat-number {
+    background: color-mix(in srgb, var(--player) 18%, #252a35);
+  }
+  :root[data-theme="dark"] .cell {
+    border-color: #596274;
+  }
+  :root[data-theme="dark"] .cell[aria-disabled="false"]:hover {
+    background: #36334c;
+  }
+  :root[data-theme="dark"] .cell.last-move {
+    background: #343147;
+  }
+  :root[data-theme="dark"] .cell.winning {
+    background: #234c3d;
+  }
+  :root[data-theme="dark"] .connect-board {
+    background: #363e5d;
+    border-color: #697399;
+  }
+  :root[data-theme="dark"] .connect-board .cell {
+    background: #1e2434;
+  }
+  :root[data-theme="dark"] .naval-board .ship {
+    background: #324f61;
+    box-shadow: inset 0 0 0 2px #6596b0;
+  }
+  :root[data-theme="dark"] .naval-board .hit {
+    background: #5c303e;
+  }
+  :root[data-theme="dark"] .notice.error {
+    background: #492d38;
+    color: #ffbdc9;
+  }
+  :root[data-theme="dark"] .badge {
+    background: #343b4a;
+  }
+  :root[data-theme="dark"] .badge.available {
+    background: #284438;
+    color: #a4dcbd;
+  }
+}
+
+@layer responsive {
+  @media (max-width: 380px) {
+    .site-header {
+      padding-inline: 16px;
+      gap: 8px;
+      grid-template-columns: minmax(0, 1fr) auto;
+    }
+    nav {
+      gap: 0;
+    }
+    nav a {
+      font-size: 12px;
+      padding: 6px;
+    }
+  }
+  .room-heading > div:first-child {
+    min-width: 0;
+  }
+}
+
+@layer responsive {
+  .language-control {
+    position: relative;
+    display: inline-flex;
+  }
+  .language-control img {
+    position: absolute;
+    left: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 20px;
+    height: auto;
+    pointer-events: none;
+    object-fit: contain;
+  }
+  .preferences select {
+    width: 82px;
+    padding-left: 32px;
+  }
+}
