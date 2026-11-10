@@ -1,0 +1,120 @@
+@layer games {
+  .naval-game {
+    width: 100%;
+    min-width: 0;
+  }
+  .naval-view-controls {
+    display: none;
+  }
+  .naval-fields {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 28px;
+    align-items: start;
+  }
+  .naval-field {
+    min-width: 0;
+  }
+  .naval-field-heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    min-height: 32px;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+  .naval-field-heading h3 {
+    font-size: 15px;
+    font-weight: 700;
+    overflow-wrap: anywhere;
+    text-wrap: balance;
+  }
+  .naval-defending {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    flex-shrink: 0;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--primary);
+    padding: 4px 7px;
+    border-radius: 5px;
+    background: var(--tint);
+  }
+  .naval-defending .action-icon {
+    width: 13px;
+    height: 13px;
+  }
+  .naval-field .board {
+    width: 100%;
+    max-width: none;
+  }
+  .naval-chart {
+    display: grid;
+    grid-template-columns: 22px minmax(0, 1fr);
+    grid-template-rows: 22px minmax(0, 1fr);
+    width: 100%;
+  }
+  .naval-columns,
+  .naval-rows {
+    display: grid;
+    align-items: center;
+    justify-items: center;
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: 650;
+    font-variant-numeric: tabular-nums;
+    user-select: none;
+  }
+  .naval-columns {
+    grid-column: 2;
+    grid-template-columns: repeat(var(--columns), minmax(0, 1fr));
+  }
+  .naval-rows {
+    grid-row: 2;
+    grid-template-rows: repeat(var(--rows), minmax(0, 1fr));
+  }
+  .naval-chart-board {
+    grid-column: 2;
+    grid-row: 2;
+    min-width: 0;
+  }
+  .naval-field-note {
+    margin-top: 12px;
+    font-size: 13px;
+    color: var(--muted);
+  }
+  @media (max-width: 700px) {
+    .naval-chart {
+      grid-template-columns: 20px minmax(0, 1fr);
+      grid-template-rows: 20px minmax(0, 1fr);
+    }
+    .naval-view-controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 16px;
+    }
+    .naval-view-controls .button {
+      flex: 1 1 auto;
+      gap: 5px;
+      font-size: 11px;
+      padding-inline: 9px;
+    }
+    .naval-view-controls .action-icon {
+      width: 14px;
+      height: 14px;
+    }
+    .naval-fields {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 24px;
+    }
+    .naval-fields[data-mobile-view="own"] .naval-enemy,
+    .naval-fields[data-mobile-view="enemy"] .naval-own {
+      display: none;
+    }
+    .naval-field-heading {
+      margin-bottom: 8px;
+    }
+  }
+}

@@ -17,6 +17,7 @@ import { api, type Lobby, type RoomView, unwrap } from "@/shared/api/game-api";
 import { live } from "@/shared/api/live-connection";
 import { language, setLanguage, t } from "@/shared/i18n/i18n";
 import { normalizeCode, parseInvitation } from "@/shared/invitations/invitations";
+import { ActionIcon } from "@/shared/ui/action-icon";
 import { Button, Notice } from "@/shared/ui/ui-controls";
 
 function routePath() {
@@ -115,7 +116,15 @@ function App() {
       </>
     );
   else if (!lobby || loadedRoute !== route) content = <Notice>{t("loading")}</Notice>;
-  else if (page === "home") content = <HomeLive lobby={lobby} connection={setOnline} />;
+  else if (page === "home" || page === "join")
+    content = (
+      <HomeLive
+        key={page === "join" ? route : "home"}
+        lobby={lobby}
+        connection={setOnline}
+        invite={page === "join" ? invited : undefined}
+      />
+    );
   else if (page === "room" && normalizeCode(id))
     content = <RoomPage key={id} id={normalizeCode(id)} catalog={lobby.games} connection={setOnline} />;
   else if (page === "new" && spec)
@@ -127,16 +136,6 @@ function App() {
         from={query.get("from") || ""}
         preferredSeat={preset?.role}
         preset={preset ? { size: preset.room.size, players: preset.room.seats.length } : undefined}
-      />
-    );
-  else if (page === "join")
-    content = (
-      <RoomEntry
-        key={route}
-        catalog={lobby.games}
-        code={normalizeCode(id)}
-        watch={invited.watch}
-        preferredSeat={invited.seat}
       />
     );
   else if (page === "history") content = <HistoryPage catalog={lobby.games} />;
@@ -173,8 +172,9 @@ function App() {
             {["home", "history", "status"].map((item) => (
               <a
                 key={item}
+                class="nav-link"
                 href={item === "home" ? "/#/" : `/#/${item}`}
-                aria-current={page === item ? "page" : undefined}
+                aria-current={(page === "join" ? "home" : page) === item ? "page" : undefined}
               >
                 {t(item === "home" ? "games" : item)}
               </a>
@@ -182,20 +182,24 @@ function App() {
           </nav>
         )}
         <div class="preferences">
-          <span class="language-control">
-            <img src={`/language-${locale}.svg`} width="20" height="14" alt="" />
-            <select
-              aria-label={t("language")}
-              value={locale}
-              onChange={(event) => {
-                setLanguage(event.currentTarget.value);
-                setLocale(language());
-              }}
-            >
-              <option value="ru">RU</option>
-              <option value="en">EN</option>
-            </select>
-          </span>
+          <fieldset class="language-control" aria-label={t("language")}>
+            {["ru", "en"].map((value) => (
+              <button
+                type="button"
+                key={value}
+                class="language-button"
+                aria-pressed={locale === value}
+                aria-label={value === "ru" ? "Русский" : "English"}
+                onClick={() => {
+                  setLanguage(value);
+                  setLocale(language());
+                }}
+              >
+                <img src={`/language-${value}.svg`} width="20" height="14" alt="" />
+                <span>{value.toUpperCase()}</span>
+              </button>
+            ))}
+          </fieldset>
           <button
             type="button"
             class="theme-toggle"
@@ -203,16 +207,7 @@ function App() {
             title={t(theme === "dark" ? "lightTheme" : "darkTheme")}
             onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
           >
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              {theme === "dark" ? (
-                <>
-                  <circle cx="12" cy="12" r="4" />
-                  <path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5" />
-                </>
-              ) : (
-                <path d="M20 15A8.5 8.5 0 0 1 9 4a8.5 8.5 0 1 0 11 11Z" />
-              )}
-            </svg>
+            <ActionIcon name={theme === "dark" ? "sun" : "moon"} />
           </button>
         </div>
         <span class={`connection ${online ? "online" : "offline"}`} role="status">
@@ -223,13 +218,28 @@ function App() {
         {content}
       </main>
       <footer class="site-footer">
-        {PROJECT.author} · {PROJECT.year} · <a href={PROJECT.repository}>GitHub</a> ·{" "}
-        <a href={`${PROJECT.repository}/blob/main/LICENSE`}>MIT</a>
+        {PROJECT.author} · {PROJECT.year} ·{" "}
+        <a class="footer-link" href={PROJECT.repository}>
+          GitHub
+          <ActionIcon name="external" />
+        </a>{" "}
+        ·{" "}
+        <a class="footer-link" href={`${PROJECT.repository}/blob/main/LICENSE`}>
+          MIT
+        </a>
       </footer>
     </>
   );
 }
-function HomeLive({ lobby, connection }: { lobby: Lobby; connection: (online: boolean) => void }) {
+function HomeLive({
+  lobby,
+  connection,
+  invite,
+}: {
+  lobby: Lobby;
+  connection: (online: boolean) => void;
+  invite?: ReturnType<typeof parseInvitation>;
+}) {
   const [value, setValue] = useState(lobby);
   useEffect(
     () =>
@@ -242,7 +252,7 @@ function HomeLive({ lobby, connection }: { lobby: Lobby; connection: (online: bo
       ),
     [connection],
   );
-  return <HomePage lobby={value} />;
+  return <HomePage lobby={value} invite={invite} />;
 }
 const root = document.getElementById("app");
 if (root) {

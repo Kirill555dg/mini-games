@@ -1,0 +1,5 @@
+Lucide icons
+https://github.com/lucide-icons/lucide
+Revision: 3fef7aca71a50acc54bd2f24f0cc4747c22aa6d2
+License: ISC (see LICENSE.txt)
+Changes: decorative aria-hidden metadata; formatting.

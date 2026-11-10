@@ -37,7 +37,9 @@ export function Field({
 }) {
   return (
     <div class="field">
-      <label for={id}>{label}</label>
+      <label class="field-label" for={id}>
+        {label}
+      </label>
       {children}
       {hint && <p class="field-help">{hint}</p>}
     </div>
@@ -46,9 +48,11 @@ export function Field({
 export function Mark({ player }: { player: number }) {
   if (!player) return null;
   return (
-    <svg viewBox="0 0 40 40" class={`mark player-${player}`} aria-hidden="true">
-      {player === 1 ? <path d="M8 8 32 32M32 8 8 32" /> : <circle cx="20" cy="20" r="12" />}
-    </svg>
+    <span
+      class={`mark player-${player}`}
+      aria-hidden="true"
+      style={{ maskImage: `url("/mark-${player === 1 ? "x" : "o"}.svg")` }}
+    />
   );
 }
 export function ConfirmLeave({
@@ -78,7 +82,9 @@ export function ConfirmLeave({
       <button type="button" class="dialog-close" aria-label={t("close")} onClick={cancel}>
         ×
       </button>
-      <h2 id="leave-title">{t("leaveTitle", { code })}</h2>
+      <h2 id="leave-title" class="dialog-title">
+        {t("leaveTitle", { code })}
+      </h2>
       <p>{t("leaveHint")}</p>
       <div class="actions">
         <Button onClick={cancel} autoFocus>

@@ -3,6 +3,7 @@ package httpapi
 import (
 	"bytes"
 	"encoding/json"
+	"github.com/Kirill555dg/mini-games/internal/availability"
 	"github.com/Kirill555dg/mini-games/internal/rooms"
 	"net/http"
 	"net/http/httptest"
@@ -89,6 +90,10 @@ func TestUptimeAndNoHistoryInLobby(t *testing.T) {
 		if path == "status" {
 			if v["status"] != "ok" || v["startedAt"] == nil || v["uptimeSeconds"] == nil {
 				t.Fatal("missing real uptime")
+			}
+			var status Status
+			if json.Unmarshal(w.Body.Bytes(), &status) != nil || status.History.PeriodDays != availability.PeriodDays || len(status.History.Days) != availability.PeriodDays {
+				t.Fatal("missing bounded public status history")
 			}
 		} else if _, ok := v["history"]; ok {
 			t.Fatal("history bundled into lobby")

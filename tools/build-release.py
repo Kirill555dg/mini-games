@@ -61,13 +61,17 @@ def build(version, go_name, arches):
                 '-o', str(binary), './cmd/arcade', env=dict(os.environ, GOOS='linux', GOARCH=arch, CGO_ENABLED='0'))
             files = {'mini-games': binary.read_bytes(), 'LICENSE': (ROOT / 'LICENSE').read_bytes(),
                      'THIRD-PARTY-NOTICES.txt': (ROOT / 'THIRD-PARTY-NOTICES.txt').read_bytes()}
-            for path in sorted((ROOT / 'web/dist').iterdir()):
-                if path.is_symlink() or not path.is_file():
+            for path in sorted((ROOT / 'web/dist').rglob('*')):
+                if path.is_symlink():
+                    raise ValueError('Unexpected symbolic static build entry.')
+                if path.is_dir():
+                    continue
+                if not path.is_file():
                     raise ValueError('Unexpected static build entry.')
                 data = path.read_bytes()
                 if path.suffix == '.html':
                     data = data.replace(b'<head>', f'<head><meta name="application-version" content="{version}">'.encode(), 1)
-                files['site/' + path.name] = data
+                files['site/' + path.relative_to(ROOT / 'web/dist').as_posix()] = data
             # License notices accompany JS delivered to browsers as well as the binary archive.
             files['site/licenses.txt'] = files['LICENSE'] + b'\n\n' + files['THIRD-PARTY-NOTICES.txt']
             manifest = {'schema': 1, 'version': version, 'revision': revision, 'source': before, 'arch': arch,

@@ -101,19 +101,20 @@ type Lobby struct {
 	Games      []engine.Spec `json:"games"`
 }
 type Command struct {
-	Action   string `json:"action"`
-	From     string `json:"from,omitempty"`
-	Seat     *int   `json:"seat,omitempty"`
-	Room     string `json:"room,omitempty"`
-	Name     string `json:"name,omitempty"`
-	Game     string `json:"game,omitempty"`
-	Size     int    `json:"size,omitempty"`
-	Players  int    `json:"players,omitempty"`
-	Watch    bool   `json:"watch,omitempty"`
-	Round    uint64 `json:"round,omitempty"`
-	Cell     int    `json:"cell,omitempty"`
-	Kind     string `json:"kind,omitempty"`
-	Vertical bool   `json:"vertical,omitempty"`
+	Action     string             `json:"action"`
+	From       string             `json:"from,omitempty"`
+	Seat       *int               `json:"seat,omitempty"`
+	Room       string             `json:"room,omitempty"`
+	Name       string             `json:"name,omitempty"`
+	Game       string             `json:"game,omitempty"`
+	Size       int                `json:"size,omitempty"`
+	Players    int                `json:"players,omitempty"`
+	Watch      bool               `json:"watch,omitempty"`
+	Round      uint64             `json:"round,omitempty"`
+	Cell       int                `json:"cell,omitempty"`
+	Kind       string             `json:"kind,omitempty"`
+	Vertical   bool               `json:"vertical,omitempty"`
+	Placements []engine.Placement `json:"placements,omitempty"`
 }
 
 func New(path string) (*Hub, error) {
@@ -508,7 +509,7 @@ func (h *Hub) Do(k Key, c Command) (View, error) {
 		if kind == "" {
 			kind = "move"
 		}
-		if err := next.Apply(actor, engine.Action{Kind: kind, Cell: c.Cell, Vertical: c.Vertical}); err != nil {
+		if err := next.Apply(actor, engine.Action{Kind: kind, Cell: c.Cell, Vertical: c.Vertical, Placements: c.Placements}); err != nil {
 			return View{}, problem(409, err.Error())
 		}
 		old := r.engine
@@ -600,11 +601,15 @@ func (h *Hub) enter(k Key, c Command) (View, error) {
 		if c.Game == "" {
 			c.Game = "tictactoe"
 		}
+		spec, ok := games.Find(c.Game)
+		if !ok {
+			return View{}, problem(400, "Выберите доступную игру.")
+		}
 		if c.Size == 0 {
-			c.Size = 3
+			c.Size = spec.DefaultSize()
 		}
 		if c.Players == 0 {
-			c.Players = 2
+			c.Players = spec.MinPlayers
 		}
 		g, err := games.New(c.Game, c.Size, c.Players)
 		if err != nil {

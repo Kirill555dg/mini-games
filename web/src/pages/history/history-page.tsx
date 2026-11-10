@@ -3,87 +3,160 @@ import { GameBoard, gameTitle, replayState } from "@/entities/game/game-board";
 import { api, type GameSpec, type Match, unwrap } from "@/shared/api/game-api";
 import { GAME_STATE, ROOM_CODE } from "@/shared/api/protocol.generated";
 import { dateLocale, t } from "@/shared/i18n/i18n";
+import { ActionIcon } from "@/shared/ui/action-icon";
 import { HISTORY_PAGE_SIZE } from "@/shared/ui/display-constants";
 import { Button, Heading, Notice } from "@/shared/ui/ui-controls";
 import { MoveReview } from "@/widgets/replay/move-review";
 
+function filtersFromURL() {
+  const params = new URLSearchParams(location.hash.split("?")[1]);
+  return { games: params.getAll("game"), code: params.get("code") || "", match: params.get("match") || "" };
+}
 export function HistoryPage({ catalog }: { catalog: GameSpec[] }) {
   const [records, setRecords] = useState<Match[]>(),
     [error, setError] = useState(""),
-    [code, setCode] = useState(""),
-    [game, setGame] = useState(""),
+    [attempt, setAttempt] = useState(0);
+  const [filters, setFilters] = useState(filtersFromURL),
     [visible, setVisible] = useState(HISTORY_PAGE_SIZE);
   useEffect(() => {
     let alive = true;
-    unwrap(api.GET("/game-api/history"))
+    const controller = new AbortController();
+    setError("");
+    unwrap(api.GET("/game-api/history", { signal: controller.signal }))
       .then((data) => {
         if (alive) setRecords(data.reverse());
       })
       .catch((failure) => {
         if (alive) setError(failure.message);
       });
+    const sync = () => setFilters(filtersFromURL());
+    window.addEventListener("hashchange", sync);
     return () => {
       alive = false;
+      controller.abort();
+      window.removeEventListener("hashchange", sync);
     };
-  }, []);
+  }, [attempt]);
+  function change(next: Partial<typeof filters>) {
+    const value = { ...filters, ...next };
+    setFilters(value);
+    if (next.games !== undefined || next.code !== undefined) setVisible(HISTORY_PAGE_SIZE);
+    const params = new URLSearchParams();
+    for (const game of value.games) params.append("game", game);
+    if (value.code) params.set("code", value.code);
+    if (value.match) params.set("match", value.match);
+    history.replaceState(null, "", `/#/history${params.size ? `?${params}` : ""}`);
+  }
   const filtered =
     records?.filter(
-      (record) => record.code.includes(code.toUpperCase()) && (!game || game === record.game),
+      (record) =>
+        record.code.includes(filters.code.toUpperCase()) &&
+        (!filters.games.length || filters.games.includes(record.game)),
     ) || [];
+  const active = Boolean(filters.games.length || filters.code);
+  const shown = Math.max(visible, filtered.findIndex((record) => String(record.id) === filters.match) + 1);
   return (
     <section class="history-page">
       <Heading title={t("history")} hint={t("historyHint")} />
-      <div class="history-filters">
-        <input
-          type="search"
-          value={code}
-          maxLength={ROOM_CODE.length}
-          placeholder={t("code")}
-          aria-label={t("historyCode")}
-          onInput={(event) => {
-            setCode(event.currentTarget.value);
-            setVisible(HISTORY_PAGE_SIZE);
-          }}
-        />
-        <select
-          value={game}
-          aria-label={t("games")}
-          onChange={(event) => {
-            setGame(event.currentTarget.value);
-            setVisible(HISTORY_PAGE_SIZE);
-          }}
+      <fieldset class="game-filters" aria-label={t("selectedGames")}>
+        <Button
+          class="game-filter"
+          aria-pressed={!filters.games.length}
+          onClick={() => change({ games: [], match: "" })}
         >
-          <option value="">{t("allGames")}</option>
-          {catalog.map((spec) => (
-            <option value={spec.id} key={spec.id}>
-              {gameTitle(catalog, spec.id)}
-            </option>
-          ))}
-        </select>
+          <ActionIcon name="grid" />
+          {t("allGames")}
+        </Button>
+        {catalog.map((game) => (
+          <Button
+            class="game-filter"
+            key={game.id}
+            aria-pressed={filters.games.includes(game.id)}
+            onClick={() =>
+              change({
+                games: filters.games.includes(game.id)
+                  ? filters.games.filter((value) => value !== game.id)
+                  : [...filters.games, game.id],
+                match: "",
+              })
+            }
+          >
+            <img src={`/${game.id}.svg`} width="30" height="25" alt="" />
+            {gameTitle(catalog, game.id)}
+            {filters.games.includes(game.id) && <ActionIcon name="check" />}
+          </Button>
+        ))}
+      </fieldset>
+      <div class="history-filters">
+        <label class="search-field">
+          <ActionIcon name="search" />
+          <input
+            type="search"
+            name="match-code"
+            value={filters.code}
+            maxLength={ROOM_CODE.length}
+            placeholder={t("historyCode")}
+            aria-label={t("historyCode")}
+            autoCapitalize="characters"
+            autoComplete="off"
+            spellcheck={false}
+            onInput={(event) => change({ code: event.currentTarget.value, match: "" })}
+          />
+        </label>
+        <span class="muted">{t("historyCount", { n: filtered.length })}</span>
+        {active && (
+          <Button class="small" onClick={() => change({ games: [], code: "", match: "" })}>
+            {t("clearFilters")}
+          </Button>
+        )}
       </div>
       {error ? (
-        <Notice error>{error}</Notice>
+        <div class="empty-state">
+          <Notice error>{error}</Notice>
+          <Button onClick={() => setAttempt(attempt + 1)}>{t("retry")}</Button>
+        </div>
       ) : !records ? (
         <Notice>{t("loading")}</Notice>
       ) : !filtered.length ? (
-        <Notice>{t(records.length ? "historyFiltered" : "historyEmpty")}</Notice>
+        <div class="empty-state">
+          <ActionIcon name="clock" />
+          <h2>{t(records.length ? "historyFiltered" : "historyEmpty")}</h2>
+          {active && (
+            <Button onClick={() => change({ games: [], code: "", match: "" })}>{t("clearFilters")}</Button>
+          )}
+        </div>
       ) : (
         <div class="match-list">
-          {filtered.slice(0, visible).map((record) => (
-            <MatchReview key={record.id} record={record} catalog={catalog} />
+          {filtered.slice(0, shown).map((record) => (
+            <MatchReview
+              key={record.id}
+              record={record}
+              catalog={catalog}
+              open={filters.match === String(record.id)}
+              toggle={(open) => change({ match: open ? String(record.id) : "" })}
+            />
           ))}
         </div>
       )}
-      {filtered.length > visible && (
-        <Button onClick={() => setVisible(visible + HISTORY_PAGE_SIZE)}>{t("more")}</Button>
+      {filtered.length > shown && (
+        <Button onClick={() => setVisible(shown + HISTORY_PAGE_SIZE)}>{t("more")}</Button>
       )}
     </section>
   );
 }
-function MatchReview({ record, catalog }: { record: Match; catalog: GameSpec[] }) {
-  const total = record.state.moves?.length || 0;
-  const [index, setIndex] = useState(total),
-    [open, setOpen] = useState(false);
+function MatchReview({
+  record,
+  catalog,
+  open,
+  toggle,
+}: {
+  record: Match;
+  catalog: GameSpec[];
+  open: boolean;
+  toggle: (open: boolean) => void;
+}) {
+  const total = record.state.moves?.length || 0,
+    [index, setIndex] = useState(total);
   const state = replayState(record.game, record.state, index);
   const outcome =
     record.reason && record.winner === GAME_STATE.draw
@@ -92,17 +165,29 @@ function MatchReview({ record, catalog }: { record: Match; catalog: GameSpec[] }
         ? t("draw")
         : t("winner", { name: record.players[record.winner] });
   return (
-    <details class="match" onToggle={(event) => setOpen(event.currentTarget.open)}>
+    <details
+      class="match"
+      open={open}
+      onToggle={(event) => {
+        if (event.currentTarget.open !== open) toggle(event.currentTarget.open);
+      }}
+    >
       <summary>
-        <span class="match-code">{record.code}</span>
+        <img class="match-icon" src={`/${record.game}.svg`} width="56" height="46" alt="" />
         <span class="match-description">
           <strong>{gameTitle(catalog, record.game)}</strong>
           <span class="muted">{record.players.join(" · ")}</span>
         </span>
-        <span class="match-result">{outcome}</span>
+        <span class="match-outcome">
+          <span class="match-result">{outcome}</span>
+          <span class="match-code" translate={false}>
+            {record.code}
+          </span>
+        </span>
         <time dateTime={record.finishedAt}>
           {new Date(record.finishedAt).toLocaleDateString(dateLocale(), { day: "numeric", month: "short" })}
         </time>
+        <ActionIcon name="chevron" />
       </summary>
       {open && (
         <div class="match-review">

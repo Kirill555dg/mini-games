@@ -120,11 +120,32 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        availability_Day: {
+            date: string;
+            observedSeconds: number;
+            requests: number;
+            serverErrors: number;
+            /** @enum {string} */
+            state: "ok" | "degraded" | "down" | "unknown";
+            unknownSeconds: number;
+        };
+        availability_Snapshot: {
+            days: components["schemas"]["availability_Day"][];
+            /** Format: date-time */
+            observedSince: string;
+            periodDays: number;
+            sampleIntervalSeconds: number;
+        };
         engine_Move: {
             boxes?: number[];
             cell: number;
             hit?: boolean;
             player: number;
+        };
+        engine_Placement: {
+            cell: number;
+            ship: number;
+            vertical: boolean;
         };
         engine_Spec: {
             description: string;
@@ -146,11 +167,14 @@ export interface components {
             boxes?: number[];
             enemy?: number[];
             fleet?: number[];
+            fleetGap?: number;
+            fleetLengths?: number[];
             height: number;
             line?: number[];
             moves?: components["schemas"]["engine_Move"][];
             own?: number[];
             phase: string;
+            placements?: components["schemas"]["engine_Placement"][];
             ready?: boolean[];
             scores?: number[];
             turn: number;
@@ -179,6 +203,7 @@ export interface components {
             error: string;
         };
         httpapi_Status: {
+            history: components["schemas"]["availability_Snapshot"];
             /** Format: date-time */
             startedAt: string;
             status: string;
@@ -196,6 +221,7 @@ export interface components {
             game?: string;
             kind?: string;
             name?: string;
+            placements?: components["schemas"]["engine_Placement"][];
             players?: number;
             room?: string;
             round?: number;

@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/Kirill555dg/mini-games/internal/availability"
 	"github.com/Kirill555dg/mini-games/internal/rooms"
 	"github.com/Kirill555dg/mini-games/internal/telemetry"
 	"io"
@@ -27,10 +28,11 @@ type VisitResponse struct {
 	OK bool `json:"ok"`
 }
 type Status struct {
-	Status        string    `json:"status"`
-	StartedAt     time.Time `json:"startedAt"`
-	UptimeSeconds int64     `json:"uptimeSeconds"`
-	Version       string    `json:"version"`
+	Status        string                `json:"status"`
+	StartedAt     time.Time             `json:"startedAt"`
+	UptimeSeconds int64                 `json:"uptimeSeconds"`
+	Version       string                `json:"version"`
+	History       availability.Snapshot `json:"history"`
 }
 
 type Server struct {
@@ -39,6 +41,7 @@ type Server struct {
 	secure                  bool
 	started                 time.Time
 	counters                *telemetry.Counters
+	availability            *availability.Store
 	slots                   chan struct{}
 	AccessLog               bool
 }
@@ -49,10 +52,12 @@ func New(h *rooms.Hub, origin, version string, dev bool) *Server {
 		cookie = "game_session"
 	}
 	counters, _ := telemetry.New("")
-	return &Server{hub: h, origin: origin, version: version, cookie: cookie, secure: !dev, started: time.Now().UTC(), counters: counters, slots: make(chan struct{}, MaxFiniteRequests)}
+	observations, _ := availability.Open("")
+	return &Server{hub: h, origin: origin, version: version, cookie: cookie, secure: !dev, started: time.Now().UTC(), counters: counters, availability: observations, slots: make(chan struct{}, MaxFiniteRequests)}
 }
 
-func (s *Server) SetCounters(c *telemetry.Counters) { s.counters = c }
+func (s *Server) SetCounters(c *telemetry.Counters)     { s.counters = c }
+func (s *Server) SetAvailability(h *availability.Store) { s.availability = h }
 
 type response struct {
 	http.ResponseWriter
@@ -105,6 +110,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			defer func() { <-s.slots }()
 		default:
 			s.counters.Request(http.StatusServiceUnavailable)
+			s.availability.Request(http.StatusServiceUnavailable)
 			write(w, 503, map[string]string{"error": "Игре не хватает выделенных ресурсов. Повторите позже."})
 			return
 		}
@@ -120,6 +126,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w = tracked
 	defer func() {
 		s.counters.Request(tracked.status)
+		s.availability.Request(tracked.status)
 		if s.AccessLog {
 			route := "other"
 			switch r.URL.Path {
@@ -184,7 +191,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	case "/game-api/history":
 		write(w, 200, s.hub.History())
 	case "/game-api/status":
-		write(w, 200, Status{"ok", s.started, int64(time.Since(s.started).Seconds()), s.version})
+		write(w, 200, Status{Status: availability.StateOK, StartedAt: s.started, UptimeSeconds: int64(time.Since(s.started).Seconds()), Version: s.version, History: s.availability.Snapshot()})
 	case "/game-api/state":
 		v, err := s.hub.View(r.URL.Query().Get("room"), s.key(r))
 		if err != nil {

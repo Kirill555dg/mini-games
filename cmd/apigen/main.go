@@ -11,6 +11,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Kirill555dg/mini-games/internal/availability"
+	"github.com/Kirill555dg/mini-games/internal/battleship"
 	"github.com/Kirill555dg/mini-games/internal/engine"
 	"github.com/Kirill555dg/mini-games/internal/history"
 	"github.com/Kirill555dg/mini-games/internal/httpapi"
@@ -70,6 +72,9 @@ func describe(t reflect.Type) schema {
 				sort.Strings(values)
 				properties[key]["enum"] = values
 			}
+			if name == "availability_Day" && key == "state" {
+				properties[key]["enum"] = availability.States()
+			}
 		}
 		components[name] = schema{"type": "object", "properties": properties, "required": required, "additionalProperties": false}
 		return ref
@@ -96,7 +101,7 @@ func main() {
 	add("/game-api/visit", "post", "trackVisit", httpapi.VisitResponse{}, nil, false)
 	paths["/game-api/events"] = map[string]any{"get": schema{"operationId": "events", "parameters": []any{schema{"name": "room", "in": "query", "required": false, "schema": schema{"type": "string", "pattern": fmt.Sprintf("^[%s]{%d}$", rooms.CodeAlphabet, rooms.CodeLength)}}}, "responses": schema{"200": schema{"description": "SSE state events: Lobby or viewer-specific View; null means room closed", "content": schema{"text/event-stream": schema{"schema": schema{"type": "string"}}}}}}}
 	_ = describe(reflect.TypeOf(engine.Spec{}))
-	document := schema{"x-room-actions": rooms.Actions(), "x-room-code": schema{"length": rooms.CodeLength, "alphabet": rooms.CodeAlphabet, "maxNameRunes": rooms.MaxNameRunes}, "x-game-values": schema{"draw": engine.Draw, "noWinner": engine.NoWinner, "playing": engine.Playing, "setup": engine.Setup, "finished": engine.Finished}, "openapi": "3.1.0", "info": schema{"title": "Mini-games API", "version": "1.0.0", "license": schema{"name": "MIT", "url": "https://opensource.org/license/mit/"}}, "servers": []any{schema{"url": "/"}}, "paths": paths, "components": schema{"schemas": components}}
+	document := schema{"x-naval-cells": battleship.Cells(), "x-room-actions": rooms.Actions(), "x-room-code": schema{"length": rooms.CodeLength, "alphabet": rooms.CodeAlphabet, "maxNameRunes": rooms.MaxNameRunes}, "x-game-values": schema{"draw": engine.Draw, "noWinner": engine.NoWinner, "playing": engine.Playing, "setup": engine.Setup, "finished": engine.Finished}, "openapi": "3.1.0", "info": schema{"title": "Mini-games API", "version": "1.0.0", "license": schema{"name": "MIT", "url": "https://opensource.org/license/mit/"}}, "servers": []any{schema{"url": "/"}}, "paths": paths, "components": schema{"schemas": components}}
 	data, err := json.MarshalIndent(document, "", "  ")
 	if err != nil {
 		panic(err)

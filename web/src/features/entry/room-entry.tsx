@@ -1,8 +1,9 @@
-import { useEffect, useRef, useState } from "preact/hooks";
+import { useEffect, useId, useRef, useState } from "preact/hooks";
+import { GameRules } from "@/entities/game/game-rules";
 import { api, type GameSpec, type RoomView, unwrap } from "@/shared/api/game-api";
 import { live } from "@/shared/api/live-connection";
 import { ROOM_ACTION, ROOM_CODE } from "@/shared/api/protocol.generated";
-import { sideName, t, translated } from "@/shared/i18n/i18n";
+import { t, translated } from "@/shared/i18n/i18n";
 import {
   INVITE_INPUT_MAX_LENGTH,
   invitation,
@@ -11,6 +12,7 @@ import {
   savedName,
   saveName,
 } from "@/shared/invitations/invitations";
+import { ActionIcon } from "@/shared/ui/action-icon";
 import { Button, Field, Heading, Notice } from "@/shared/ui/ui-controls";
 
 type Props = {
@@ -21,6 +23,7 @@ type Props = {
   preferredSeat?: number;
   preset?: { size: number; players: number };
   from?: string;
+  embedded?: boolean;
 };
 export function RoomEntry({
   catalog,
@@ -30,19 +33,23 @@ export function RoomEntry({
   preferredSeat,
   preset,
   from = "",
+  embedded = false,
 }: Props) {
   const [name, setName] = useState(savedName),
     [input, setInput] = useState(code),
     [watching, setWatching] = useState(watch);
   const [size, setSize] = useState(preset?.size || game?.sizes?.[0] || 0),
     [players, setPlayers] = useState(preset?.players || game?.minPlayers || 2);
-  const [seat, setSeat] = useState(preferredSeat === undefined ? "" : String(preferredSeat));
-  const [view, setView] = useState<RoomView | null>(null),
-    [error, setError] = useState(""),
-    [busy, setBusy] = useState(false);
+  const [seat, setSeat] = useState(preferredSeat),
+    [view, setView] = useState<RoomView | null>(null);
+  const [error, setError] = useState(""),
+    [busy, setBusy] = useState(false),
+    [nextRoom, setNextRoom] = useState("");
   const alive = useRef(true),
-    submitController = useRef<AbortController | null>(null);
-  const [nextRoom, setNextRoom] = useState("");
+    submitController = useRef<AbortController | null>(null),
+    uid = useId();
+  const creating = Boolean(game),
+    normalized = normalizeCode(input);
   useEffect(
     () => () => {
       alive.current = false;
@@ -60,68 +67,76 @@ export function RoomEntry({
       () => {},
     );
   }, [from]);
-  const creating = Boolean(game),
-    normalized = normalizeCode(input);
   useEffect(() => {
-    if (creating || !normalized) {
-      setView(null);
-      return;
-    }
+    setView(null);
+    if (creating || !normalized) return;
     let current = true;
     const controller = new AbortController();
     unwrap(api.GET("/game-api/state", { params: { query: { room: normalized } }, signal: controller.signal }))
       .then((value) => {
-        if (current) setView(value);
+        if (current) {
+          setView(value);
+          if (seat !== undefined && (!value.room.seats[seat] || value.room.seats[seat].taken))
+            setSeat(undefined);
+        }
       })
-      .catch(() => {
-        if (current) setView(null);
-      });
+      .catch(() => {});
     return () => {
       current = false;
       controller.abort();
     };
   }, [creating, normalized]);
-  const spec = game || catalog.find((item) => item.id === view?.room.game);
-  const capacity = creating ? players : view?.room.seats.length || 2;
-  useEffect(() => {
-    if (
-      !creating &&
-      seat !== "" &&
-      view &&
-      (Number(seat) >= view.room.seats.length || view.room.seats[Number(seat)].taken)
-    )
-      setSeat("");
-  }, [view, seat, creating]);
-  const title = game
-    ? t("createTitle", { game: translated(game, "title") || "" })
-    : t(watching ? "watchTitle" : "enterTitle");
+  const [expanded, setExpanded] = useState(!embedded || Boolean(code));
+  const nameId = `${uid}-name`,
+    codeId = `${uid}-code`;
+  const title = game ? t("createTitle", { game: translated(game, "title") || "" }) : t("joinHeading");
   return (
-    <section class="entry-page">
-      <a href="/#/" class="breadcrumb">
-        {t("games")}
-      </a>
-      <Heading title={title} />
+    <section class={embedded ? "inline-entry" : "entry-page"} data-expanded={expanded} aria-label={title}>
+      {!embedded && (
+        <a href={from ? `/#/room/${from}` : "/#/"} class="back-link">
+          <ActionIcon name="back" />
+          {t(from ? "backRoom" : "backGames")}
+        </a>
+      )}
+      {embedded ? (
+        <div class="join-heading">
+          <h2>{title}</h2>
+          <p>{t(expanded ? "joinHint" : "codeHint")}</p>
+        </div>
+      ) : (
+        <Heading title={title} hint={game ? translated(game, "description") : undefined} />
+      )}
       <form
-        class="entry-form"
+        class={embedded ? "join-form" : "entry-form"}
         onSubmit={async (event) => {
           event.preventDefault();
           if (busy) return;
           if (!creating && !normalized) {
             setError(t("codeInvalid"));
+            document.getElementById(codeId)?.focus();
+            return;
+          }
+          if (embedded && !expanded) {
+            setExpanded(true);
             return;
           }
           setBusy(true);
           setError("");
           try {
-            const chosen = seat === "" ? undefined : Number(seat);
             const controller = new AbortController();
             submitController.current = controller;
             const value = await unwrap(
               api.POST("/game-api/action", {
                 signal: controller.signal,
                 body: game
-                  ? { action: ROOM_ACTION.create, from, name, game: game.id, size, players, seat: chosen }
-                  : { action: ROOM_ACTION.enter, name, room: normalized, watch: watching, seat: chosen },
+                  ? { action: ROOM_ACTION.create, from, name, game: game.id, size, players, seat }
+                  : {
+                      action: ROOM_ACTION.enter,
+                      name,
+                      room: normalized,
+                      watch: watching,
+                      seat: watching ? undefined : seat,
+                    },
               }),
             );
             if (!alive.current) return;
@@ -129,137 +144,142 @@ export function RoomEntry({
             location.hash = `/room/${value.room.id}`;
           } catch (failure) {
             if (!alive.current) return;
-            if (from) {
+            setError(failure instanceof Error ? failure.message : t("error503"));
+            if (from)
               try {
                 const previous = await unwrap(
                   api.GET("/game-api/state", { params: { query: { room: from } } }),
                 );
                 if (alive.current && previous.room.nextRoom) setNextRoom(previous.room.nextRoom);
               } catch {
-                /* Preserve the original error. */
+                /* Keep original error. */
               }
-            }
-            if (!alive.current) return;
-            setError(failure instanceof Error ? failure.message : t("error503"));
           } finally {
             if (alive.current) setBusy(false);
           }
         }}
       >
-        <Field label={t("yourName")} id="entry-name" hint={t("nameHint")}>
-          <input
-            id="entry-name"
-            name="name"
-            value={name}
-            required
-            maxLength={ROOM_CODE.maxNameRunes}
-            autoComplete="nickname"
-            onInput={(event) => setName(event.currentTarget.value)}
-          />
-        </Field>
-        {!creating && (
-          <>
-            <Field label={t("code")} id="entry-code" hint={t("codeHint")}>
+        <div class={embedded ? "join-inputs" : "entry-fields"}>
+          {!creating && (
+            <Field label={t("code")} id={codeId}>
               <input
-                id="entry-code"
-                name="code"
+                id={codeId}
+                name="room-code"
+                class="code-input"
                 value={input}
                 required
                 maxLength={INVITE_INPUT_MAX_LENGTH}
                 autoComplete="off"
                 autoCapitalize="characters"
                 spellcheck={false}
-                placeholder="K7M2QD"
+                placeholder={t("codePlaceholder")}
+                aria-invalid={Boolean(error && !normalized)}
                 onInput={(event) => {
                   const value = event.currentTarget.value;
                   setInput(value);
+                  if (normalizeCode(value)) setExpanded(true);
+                  setError("");
                   const pasted = parseInvitation(value);
-                  if (value.includes("/")) {
-                    setWatching(pasted.watch || false);
-                    setSeat(pasted.seat === undefined ? "" : String(pasted.seat));
-                  } else setSeat("");
+                  setSeat(pasted.seat);
+                  if (value.includes("/")) setWatching(pasted.watch || false);
                 }}
               />
             </Field>
-            <fieldset class="segmented">
-              <legend class="sr-only">{t("play")}</legend>
+          )}
+          {expanded && (
+            <Field label={t("yourName")} id={nameId}>
+              <input
+                id={nameId}
+                name="nickname"
+                value={name}
+                required
+                maxLength={ROOM_CODE.maxNameRunes}
+                autoComplete="nickname"
+                placeholder={t("namePlaceholder")}
+                onInput={(event) => setName(event.currentTarget.value)}
+              />
+            </Field>
+          )}
+        </div>
+        {!creating && expanded && (
+          <div class="join-mode">
+            <fieldset class="choice-group mode-choices">
+              <legend class="sr-only">{t("joinMode")}</legend>
               {[false, true].map((value) => (
-                <label key={String(value)}>
+                <label class="choice" key={String(value)}>
                   <input
                     type="radio"
-                    name="mode"
+                    name={`${uid}-mode`}
                     checked={watching === value}
                     onChange={() => setWatching(value)}
                   />
-                  <span>{t(value ? "watch" : "play")}</span>
+                  <span class="choice-content">
+                    <ActionIcon name={value ? "eye" : "users"} />
+                    {t(value ? "watch" : "play")}
+                  </span>
                 </label>
               ))}
             </fieldset>
-          </>
+            {view && (
+              <span class="join-preview">
+                {translated(
+                  catalog.find((item) => item.id === view.room.game),
+                  "title",
+                )}
+              </span>
+            )}
+          </div>
         )}
         {game?.sizes && (
-          <Field label={t("boardSize")} id="entry-size">
-            <select
-              id="entry-size"
-              name="size"
-              value={size}
-              onChange={(event) => setSize(Number(event.currentTarget.value))}
-            >
+          <fieldset class="option-field">
+            <legend>{t("boardSize")}</legend>
+            <div class="choice-group size-choices">
               {game.sizes.map((value) => (
-                <option key={value} value={value}>
-                  {value} × {value}
-                </option>
+                <label class="choice" key={value}>
+                  <input
+                    type="radio"
+                    name={`${uid}-size`}
+                    value={value}
+                    checked={size === value}
+                    onChange={() => setSize(value)}
+                  />
+                  <span class="choice-content">
+                    {value} × {value}
+                  </span>
+                </label>
               ))}
-            </select>
-          </Field>
+            </div>
+          </fieldset>
         )}
         {game && game.maxPlayers > game.minPlayers && (
-          <Field label={t("playerCount")} id="entry-players">
-            <select
-              id="entry-players"
-              name="players"
-              value={players}
-              onChange={(event) => {
-                setPlayers(Number(event.currentTarget.value));
-                setSeat("");
-              }}
-            >
+          <fieldset class="option-field">
+            <legend>{t("playerCount")}</legend>
+            <div class="choice-group">
               {Array.from(
                 { length: game.maxPlayers - game.minPlayers + 1 },
                 (_, index) => index + game.minPlayers,
               ).map((value) => (
-                <option key={value} value={value}>
-                  {value}
-                </option>
+                <label class="choice" key={value}>
+                  <input
+                    type="radio"
+                    name={`${uid}-players`}
+                    value={value}
+                    checked={players === value}
+                    onChange={() => setPlayers(value)}
+                  />
+                  <span class="choice-content">
+                    <ActionIcon name="users" />
+                    {value}
+                  </span>
+                </label>
               ))}
-            </select>
-          </Field>
-        )}
-        {(creating || !watching) && (
-          <Field label={t("seat")} id="entry-seat">
-            <select
-              id="entry-seat"
-              name="seat"
-              value={seat}
-              onChange={(event) => setSeat(event.currentTarget.value)}
-            >
-              <option value="">{t("anySeat")}</option>
-              {Array.from({ length: capacity }, (_, index) => (
-                <option key={index} value={index} disabled={!creating && view?.room.seats[index].taken}>
-                  {sideName(spec, index)}
-                  {!creating && view?.room.seats[index].taken ? ` · ${t("occupied")}` : ""}
-                </option>
-              ))}
-            </select>
-          </Field>
+            </div>
+          </fieldset>
         )}
         {game && (
           <>
             <p class="field-help">{t(from ? "newGameHint" : "settingsHint")}</p>
-            <details class="entry-rules">
-              <summary>{t("rules")}</summary>
-              <p>{translated(game, "rules")}</p>
-            </details>
+            <GameRules game={game} />
           </>
         )}
         {error && <Notice error>{error}</Notice>}
@@ -272,11 +292,24 @@ export function RoomEntry({
         )}
         <div class="form-actions">
           <Button type="submit" class="primary" disabled={busy}>
-            {t(busy ? (creating ? "creating" : "entering") : creating ? "create" : "continue")}
+            {t(
+              busy
+                ? creating
+                  ? "creating"
+                  : "entering"
+                : creating
+                  ? "create"
+                  : watching
+                    ? "watchRoom"
+                    : "joinRoom",
+            )}
+            <ActionIcon name={creating ? "plus" : "arrow"} />
           </Button>
-          <a class="button" href={from ? `/#/room/${from}` : "/#/"}>
-            {t("cancel")}
-          </a>
+          {!embedded && (
+            <a class="button" href={from ? `/#/room/${from}` : "/#/"}>
+              {t("cancel")}
+            </a>
+          )}
         </div>
       </form>
     </section>

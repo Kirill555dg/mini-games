@@ -1,4 +1,6 @@
+import { useState } from "preact/hooks";
 import type { Command, GameSpec, GameState } from "@/shared/api/game-api";
+import { GAME_STATE, NAVAL_CELL } from "@/shared/api/protocol.generated";
 import { t, translated } from "@/shared/i18n/i18n";
 import { Mark } from "@/shared/ui/ui-controls";
 
@@ -15,7 +17,6 @@ type Props = {
   enabled?: boolean;
   onMove?: (move: BoardAction) => void;
   own?: boolean;
-  vertical?: boolean;
 };
 
 export function GameBoard({
@@ -25,8 +26,8 @@ export function GameBoard({
   enabled = false,
   onMove = () => {},
   own = false,
-  vertical = false,
 }: Props) {
+  const [focused, setFocused] = useState(0);
   if (game === "dotsboxes") return <DotsBoard state={state} enabled={enabled} onMove={onMove} />;
   const naval = game === "battleship";
   const values = naval
@@ -53,23 +54,44 @@ export function GameBoard({
       }}
     >
       {values.map((value, index) => {
-        const placing =
-          naval &&
-          own &&
-          state.phase === "setup" &&
-          actor >= 0 &&
-          !state.ready?.[actor] &&
-          Boolean(state.fleet?.length);
         const allowed =
           enabled &&
           (naval
-            ? placing || (!own && state.phase === "playing" && !value)
+            ? !own && state.phase === GAME_STATE.playing && !value
             : game === "connectfour"
               ? !values[index % state.width]
               : !value);
+        const hull = naval && own && actor >= 0 && (value === NAVAL_CELL.ship || value === NAVAL_CELL.hit);
+        const connected = (row: number, column: number) =>
+          row >= 0 &&
+          column >= 0 &&
+          row < state.height &&
+          column < state.width &&
+          [NAVAL_CELL.ship, NAVAL_CELL.hit].includes(values[row * state.width + column]);
+        const row = Math.floor(index / state.width),
+          column = index % state.width;
+        const segments = hull
+          ? [
+              ["left", connected(row, column - 1)],
+              ["right", connected(row, column + 1)],
+              ["up", connected(row - 1, column)],
+              ["down", connected(row + 1, column)],
+            ]
+              .filter(([, joined]) => joined)
+              .map(([direction]) => `join-${direction}`)
+              .join(" ")
+          : "";
         const cell = `${String.fromCharCode(65 + (index % state.width))}${Math.floor(index / state.width) + 1}`;
         const label = naval
-          ? t(value === 1 ? "ship" : value === 2 ? "hit" : value === -1 ? "miss" : "unknown")
+          ? t(
+              value === NAVAL_CELL.ship
+                ? "ship"
+                : value === NAVAL_CELL.hit
+                  ? "hit"
+                  : value === NAVAL_CELL.miss
+                    ? "miss"
+                    : "unknown",
+            )
           : value
             ? t("cellPlayer", { n: value })
             : t("emptyCell");
@@ -77,26 +99,30 @@ export function GameBoard({
           <button
             type="button"
             key={index}
-            class={`cell player-${value} ${naval && value === 1 ? "ship" : ""} ${value === 2 && naval ? "hit" : ""} ${state.line?.includes(index) ? "winning" : ""} ${state.moves?.at(-1)?.cell === index && !naval ? "last-move" : ""}`}
+            class={`cell player-${value} ${naval && value === NAVAL_CELL.ship ? "ship" : ""} ${value === NAVAL_CELL.hit && naval ? "hit" : ""} ${state.line?.includes(index) ? "winning" : ""} ${state.moves?.at(-1)?.cell === index && !naval ? "last-move" : ""}`}
             aria-label={`${cell}: ${label}`}
             aria-disabled={!allowed}
+            tabIndex={focused === index ? 0 : -1}
+            onFocus={() => setFocused(index)}
             data-cell={index}
             data-field={naval ? (own ? "own" : "enemy") : "board"}
             onClick={() => {
-              if (allowed)
-                onMove(
-                  placing
-                    ? { kind: "place", cell: index, vertical }
-                    : { cell: game === "connectfour" ? index % state.width : index },
-                );
+              if (allowed) onMove({ cell: game === "connectfour" ? index % state.width : index });
             }}
           >
             {naval ? (
-              value === 2 ? (
-                <Mark player={1} />
-              ) : value === -1 ? (
-                <span class="miss" />
-              ) : null
+              <>
+                {hull && (
+                  <span class={`ship-segment ${segments}`} aria-hidden="true">
+                    {value !== NAVAL_CELL.hit && <span class="ship-porthole" />}
+                  </span>
+                )}
+                {value === NAVAL_CELL.hit ? (
+                  <Mark player={1} />
+                ) : value === NAVAL_CELL.miss ? (
+                  <span class="miss" />
+                ) : null}
+              </>
             ) : game === "connectfour" ? (
               value ? (
                 <span class={`disc player-${value}`} />
@@ -122,7 +148,7 @@ function DotsBoard({
   const size = state.width,
     horizontal = (size + 1) * size;
   return (
-    <fieldset class="board dots-board" aria-label={t("edges")}>
+    <fieldset class="board dots-board" aria-label={t("edges")} style={{ "--dots": size }}>
       {Array.from({ length: (size * 2 + 1) ** 2 }, (_, position) => {
         const row = Math.floor(position / (size * 2 + 1)),
           col = position % (size * 2 + 1);
@@ -170,7 +196,9 @@ export function replayState(game: string, state: GameState, count: number, viewe
     copy.own = Array(state.width * state.height).fill(0);
     copy.enemy = [...copy.own];
     for (const move of copy.moves || [])
-      (move.player === Math.max(viewer, 0) ? copy.enemy : copy.own)[move.cell] = move.hit ? 2 : -1;
+      (move.player === Math.max(viewer, 0) ? copy.enemy : copy.own)[move.cell] = move.hit
+        ? NAVAL_CELL.hit
+        : NAVAL_CELL.miss;
   } else {
     copy.board = Array(state.board?.length || 0).fill(0);
     if (game === "dotsboxes") {

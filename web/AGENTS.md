@@ -14,4 +14,9 @@
 - Keep styles based on named tokens and component responsibility. Use consistent spacing, one primary action per task and native Dialog only for bounded confirmation.
 - Run `bun run check` (Biome, FSD boundaries, TypeScript and behavior tests), then `bun run build`. Validate the production build in a browser with independent player contexts. Cover full games, spectator permissions, reconnect, new room continuation, history and responsive layout. Keep screenshots outside Git.
 
-References: [FSD layers](https://feature-sliced.design/docs/reference/layers), [Gravity UI design guides](https://gravity-ui.com/ru/design). Its context, state and accessibility rules apply; native controls and Preact keep this public mini-game site light.
+- Game interactions come first. Use visible buttons/segmented choices for short option sets, direct room entry on the home screen, and game-specific side selection in the room. Native select is not the default for every setting.
+- Keep SVG artwork and icons in public assets, with source/license attribution for downloaded icons. Do not embed path data in TSX. Original game artwork remains MIT.
+- Move review belongs only to completed match history. A live room focuses on the current board and next action.
+- Every drag interaction needs an equivalent tap and keyboard flow. Preserve drafts across refreshes from the server and failures; validate all placements server-side.
+
+References: [FSD layers](https://feature-sliced.design/docs/reference/layers), [Anthropic frontend-design](https://github.com/anthropics/skills/tree/main/skills/frontend-design), [Vercel Web Interface Guidelines](https://github.com/vercel-labs/web-interface-guidelines). Design for a friendly multiplayer game site, with consistent interactions, accessible controls and local assets.

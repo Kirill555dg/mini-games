@@ -7,7 +7,7 @@ import (
 
 func prepare(t *testing.T) *Game {
 	t.Helper()
-	g := New()
+	g := New(CompactSize)
 	for p := 0; p < 2; p++ {
 		for _, cell := range []int{0, 16, 32, 48, 63} {
 			if g.Apply(p, engine.Action{Kind: "place", Cell: cell}) != nil {
@@ -54,7 +54,7 @@ func TestPrivateFleetAndShotLifecycle(t *testing.T) {
 	}
 }
 func TestPlacementAdjacencyAndRandomFleet(t *testing.T) {
-	g := New()
+	g := New(CompactSize)
 	if g.Apply(0, engine.Action{Kind: "place", Cell: 0}) != nil {
 		t.Fatal("first ship")
 	}
@@ -74,13 +74,13 @@ func TestPlacementAdjacencyAndRandomFleet(t *testing.T) {
 		for _, v := range g.boards[0] {
 			sum += v
 		}
-		if sum != 12 || g.placed[0] != len(fleet) {
+		if sum != 12 || len(g.placements[0]) != len(compactFleet) {
 			t.Fatal("wrong fleet")
 		}
 	}
 	clone := g.Clone()
 	_ = clone.Apply(0, engine.Action{Kind: "clear"})
-	if g.placed[0] != len(fleet) {
+	if len(g.placements[0]) != len(compactFleet) {
 		t.Fatal("clone aliases fleet")
 	}
 }

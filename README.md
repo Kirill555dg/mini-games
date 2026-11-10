@@ -3,7 +3,7 @@
 A small multiplayer mini-game site. Go's standard library on the server, Preact and TypeScript in the browser. Russian and English, light and dark themes, phone/tablet/desktop layouts. Original SVG illustrations and an MIT license.
 
 - Tic-tac-toe: 3×3 through 7×7. Win with three, four, or five in a row depending on the board.
-- Sea battle: private fleets on an 8×8 board, manual or random placement.
+- Sea battle: the full classic 10×10 fleet, plus a quick 8×8 mode. Drag, rotate and move ships, or randomize placement.
 - Four in a row: a gravity-based two-player game.
 - Dots and boxes: two to four players, captured boxes and extra turns.
 
@@ -26,7 +26,7 @@ Open [the local site](http://127.0.0.1:8181). Use independent browser profiles t
 
 ## Structure and rules
 
-`cmd/arcade` wires the process. `internal/rooms` owns membership, preparation and subscriptions; `internal/httpapi` owns transport; `internal/history` owns completed public records. Each game has its own flat package behind the small `engine.Game` interface. [Backend postulates](AGENTS.md)
+`cmd/arcade` wires the process. `internal/rooms` owns membership, preparation and subscriptions; `internal/httpapi` owns transport; `internal/history` owns completed public records; `internal/availability` owns bounded status observations. Each game has its own flat package behind the small `engine.Game` interface. [Backend postulates](AGENTS.md)
 
 The frontend follows FSD: app, pages, widgets, features, entities, shared. Modules use descriptive filenames and `@/` imports. Bun builds and minifies all assets; no runtime CDN or web fonts. Biome checks formatting, code and accessibility, TypeScript checks the generated API, and a boundary check enforces FSD. [Frontend postulates](web/AGENTS.md)
 
@@ -47,19 +47,21 @@ bun run check
 
 There is no product limit of two rooms or a fixed number of spectators. Admission is constrained by a conservative 16 MiB state budget, bounded HTTP concurrency, connections and event streams. Extra viewers use polling when the stream budget is full. Exhausted capacity returns an error. Room lists are bounded summaries; invitations locate rooms directly.
 
-Use service-manager limits in production: a low CPU quota, hard memory limit, no swap allocation and low scheduling priority. Application admission supplements these operating-system limits. The public status page shows application uptime and response time, not historical external availability.
+Use service-manager limits in production: a low CPU quota, hard memory limit, no swap allocation and low scheduling priority. Application admission supplements these operating-system limits. The public status page shows current application uptime, response time and 30 UTC days of application self-observations. A sample runs once per minute. Only short consecutive sample intervals count as observed running time; restarts, long gaps and time before collection remain unknown. This is not an external availability guarantee. Daily API health is green with no observed server errors, yellow with some, and red when every observed request failed with a server error; missing coverage is separate from that health classification.
 
 Browser identities are opaque private cookies; only hashes remain in memory. Fleet placement never appears in opponents' snapshots, spectator events, history or logs. The history retains the last 100 completed games with names and public moves, using atomic replacement. The previous tic-tac-toe history format is read without rewriting it on startup. A lost connection has 90 seconds to return. Leaving a two-player match forfeits it; leaving a larger match abandons it.
 
-Optional `-access-log` records only a fixed route category, status and timing. It does not record IP addresses, request URLs, cookies, names or bodies. Optional `-metrics FILE` retains up to 14 days of anonymous page-view and visit counters; the bounded browser cache lasts 30 minutes and is never persisted. HTTP counters reset on process restart. `/internal/metrics` is for a private Unix socket consumer and must not be routed publicly.
+Sea battle drafts use stable ship IDs from the server-supplied full fleet. `fleet` validates and atomically replaces a partial draft; `deploy` validates the complete fleet and confirms readiness in one action. Invalid positions leave the previous draft unchanged. Only the owning player receives draft placements, fleet lengths and their required separation. Side swaps are locked before placement starts. Legacy sequential placement actions remain supported, and completed 8×8 records remain readable.
+
+Optional `-access-log` records only a fixed route category, status and timing. It does not record IP addresses, request URLs, cookies, names or bodies. Optional `-metrics FILE` retains up to 14 days of anonymous page-view and visit counters; the bounded browser cache lasts 30 minutes and is never persisted. The private rolling HTTP counters reset on process restart. Public daily health counts and sampled running time survive restarts in a separate, atomically replaced `status.json` beside the configured match-history file, limited to 30 days and 32 KiB. An empty `-history` path keeps both histories in memory. `/internal/metrics` is for a private Unix socket consumer and must not be routed publicly.
 
 ## Build and release
 
 Commit reviewed source, then build on your development machine. Go cross-compiles static Linux binaries from macOS; the server needs no toolchain.
 
 ```sh
-python3 tools/build-release.py --version v0.1.0
-gh release create v0.1.0 dist/mini-games-linux-amd64.tar.gz dist/mini-games-linux-arm64.tar.gz dist/SHA256SUMS --title v0.1.0 --generate-notes
+python3 tools/build-release.py --version v0.2.0
+gh release create v0.2.0 dist/mini-games-linux-amd64.tar.gz dist/mini-games-linux-arm64.tar.gz dist/SHA256SUMS --title v0.2.0 --generate-notes
 ```
 
 Each archive includes the stripped binary, minified local static assets, source revision, file hashes and license notices. Pin the archive SHA256 in the consuming deployment before installing. Hosting integrations and machine-specific configuration belong in the consuming project.
@@ -68,4 +70,4 @@ Production runs `mini-games` with `DOMAIN` set and its Unix socket accessible on
 
 ## License
 
-[MIT](LICENSE). The code, text and SVG artwork in this repository were created for this implementation. The game rules are implemented independently. [Third-party notices](THIRD-PARTY-NOTICES.txt) cover the small runtime dependencies; build tooling is listed in the locked frontend manifest.
+[MIT](LICENSE). Application code, text, game illustrations and the logo are original. The game rules are implemented independently. Downloaded Lucide icons retain their upstream license and revision in [the icon assets](web/public/icons/SOURCE.txt). [Third-party notices](THIRD-PARTY-NOTICES.txt) cover icons and runtime dependencies; build tooling is listed in the locked frontend manifest.

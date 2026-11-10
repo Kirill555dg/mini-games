@@ -1,4 +1,4 @@
-import { copyFile, mkdir, readdir, readFile, rm, writeFile } from "node:fs/promises";
+import { cp, mkdir, readdir, readFile, rm, writeFile } from "node:fs/promises";
 
 await rm("dist", { recursive: true, force: true });
 await mkdir("dist", { recursive: true });
@@ -19,7 +19,7 @@ const html = (await readFile("index.html", "utf8"))
   .replace("@STYLE@", `/${css}`);
 for (const name of ["index.html", "status.html", "404.html"])
   await writeFile(`dist/${name}`, `${html.replace(/>\s+</g, "><").trim()}\n`);
-for (const name of await readdir("public")) await copyFile(`public/${name}`, `dist/${name}`);
+for (const name of await readdir("public")) await cp(`public/${name}`, `dist/${name}`, { recursive: true });
 console.log(
   `Built ${js}, ${css}; ${result.outputs.reduce((sum, output) => sum + output.size, 0)} bytes before compression`,
 );

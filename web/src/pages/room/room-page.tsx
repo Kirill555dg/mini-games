@@ -1,13 +1,16 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "preact/hooks";
 import { BOARD_LAYOUT } from "@/entities/game/board-layout";
-import { GameBoard, gameTitle, replayState } from "@/entities/game/game-board";
+import { GameBoard, gameTitle } from "@/entities/game/game-board";
+import { GameRules } from "@/entities/game/game-rules";
 import { api, type Command, type GameSpec, type RoomView, unwrap } from "@/shared/api/game-api";
 import { live } from "@/shared/api/live-connection";
 import { GAME_STATE, ROOM_ACTION } from "@/shared/api/protocol.generated";
-import { sideName, t, translated } from "@/shared/i18n/i18n";
+import { sideName, t } from "@/shared/i18n/i18n";
 import { invitation } from "@/shared/invitations/invitations";
-import { Button, ConfirmLeave, Notice } from "@/shared/ui/ui-controls";
-import { MoveReview } from "@/widgets/replay/move-review";
+import { ActionIcon } from "@/shared/ui/action-icon";
+import { CopyControl } from "@/shared/ui/copy-control";
+import { Button, ConfirmLeave, Mark, Notice } from "@/shared/ui/ui-controls";
+import { NavalGame } from "@/widgets/naval/naval-game";
 
 export function RoomPage({
   id,
@@ -22,11 +25,7 @@ export function RoomPage({
     [closed, setClosed] = useState(false),
     [online, setOnline] = useState(false),
     [busy, setBusy] = useState(false);
-  const [message, setMessage] = useState(""),
-    [error, setError] = useState(""),
-    [cursor, setCursor] = useState<number | null>(null),
-    [vertical, setVertical] = useState(false),
-    [ownField, setOwnField] = useState(true),
+  const [error, setError] = useState(""),
     [confirm, setConfirm] = useState(false);
   const inFlight = useRef(false),
     alive = useRef(true),
@@ -54,19 +53,11 @@ export function RoomPage({
       stop();
     };
   }, [id, accept, connection]);
-  useEffect(() => {
-    setCursor(null);
-    setOwnField(current?.state.phase === "setup");
-  }, [current?.instance, current?.round]);
-  useEffect(() => {
-    if (current?.state.phase === GAME_STATE.playing) setOwnField(false);
-  }, [current?.state.phase]);
   async function act(action: Command["action"], values: Partial<Command> = {}) {
     if (inFlight.current) return false;
     inFlight.current = true;
     setBusy(true);
     setError("");
-    setMessage("");
     try {
       const value = await unwrap(
         api.POST("/game-api/action", { body: { action, room: id, round: current?.round, ...values } }),
@@ -79,7 +70,7 @@ export function RoomPage({
         const value = await unwrap(api.GET("/game-api/state", { params: { query: { room: id } } }));
         if (alive.current) accept(value);
       } catch {
-        /* The live connection reports room closure or network failure. */
+        /* Live connection reports recovery. */
       }
       return false;
     } finally {
@@ -88,7 +79,7 @@ export function RoomPage({
     }
   }
   const fit = useCallback(() => {
-    if (!stage.current || !current) return;
+    if (!stage.current || !current || current.room.game === "battleship") return;
     const ratio = current.room.game === "connectfour" ? current.state.width / current.state.height : 1;
     const available = Math.max(
       BOARD_LAYOUT.minHeight,
@@ -117,14 +108,9 @@ export function RoomPage({
     const left = !current?.name || (await act(ROOM_ACTION.leave));
     if (alive.current && left) location.hash = "/";
   }
-  async function share(watch = false) {
-    const url = invitation(id, { watch });
-    try {
-      await navigator.clipboard.writeText(url);
-      setMessage(t("copied"));
-    } catch {
-      setMessage(t("copyFallback", { code: id, url }));
-    }
+  function requestLeave() {
+    if (current && current.role >= 0 && current.room.started && !current.room.finished) setConfirm(true);
+    else void leave();
   }
   if (closed)
     return (
@@ -137,8 +123,9 @@ export function RoomPage({
           >
             {t("continue")}
           </a>
-        )}{" "}
+        )}
         <a class="button" href="/#/">
+          <ActionIcon name="back" />
           {t("backGames")}
         </a>
       </section>
@@ -146,25 +133,23 @@ export function RoomPage({
   if (!current)
     return (
       <section class="room-page">
-        <Notice>{t("loading")}</Notice>
         <Button
           onClick={() => {
             location.hash = "/";
           }}
         >
+          <ActionIcon name="back" />
           {t("backGames")}
         </Button>
+        <Notice>{t("loading")}</Notice>
       </section>
     );
   const { room, state, role } = current,
     player = role >= 0,
-    spec = catalog.find((game) => game.id === room.game);
-  const total = state.moves?.length || 0,
-    index = cursor === null ? total : Math.min(cursor, total),
-    reviewing = index < total;
+    spec = catalog.find((game) => game.id === room.game),
+    naval = room.game === "battleship";
   let text: string;
-  if (reviewing) text = t("reviewMove", { n: index });
-  else if (room.finished)
+  if (room.finished)
     text =
       current.reason && state.winner === GAME_STATE.draw
         ? t("interrupted")
@@ -177,7 +162,7 @@ export function RoomPage({
     text = room.seats.every((seat) => seat.taken)
       ? t("waitingReady")
       : t("waitingPlayers", { n: room.seats.filter((seat) => seat.taken).length, total: room.seats.length });
-  else if (state.phase === "setup")
+  else if (state.phase === GAME_STATE.setup)
     text = player ? t(state.ready?.[role] ? "fleetReady" : "placeFleet") : t("fleetsSetup");
   else text = t(role === state.turn ? "yourTurn" : "turn", { name: room.seats[state.turn]?.name || "" });
   const canMove =
@@ -186,47 +171,44 @@ export function RoomPage({
     player &&
     room.started &&
     !room.finished &&
-    !reviewing &&
-    (state.phase === "setup" || state.turn === role);
-  const showOwn = state.phase === "setup" || ownField;
+    (state.phase === GAME_STATE.setup || state.turn === role);
   const goal = state.winLength
     ? t("lineGoal", { width: state.width, height: state.height, n: state.winLength })
     : t(room.game === "dotsboxes" ? "dotsGoal" : "navalGoal");
   return (
-    <section class="room-page">
+    <section class={`room-page ${naval ? "naval-room" : ""}`}>
+      <div class="room-topline">
+        <Button class="back-link" disabled={busy} onClick={requestLeave}>
+          <ActionIcon name="back" />
+          {t("backGames")}
+        </Button>
+        <GameRules game={spec} />
+      </div>
       <div class="room-heading">
         <div>
           <h1>{gameTitle(catalog, room.game)}</h1>
-          <div class="room-meta">
-            {t("room")} <span class="room-code">{id}</span>
-            <span class="room-goal">{goal}</span>
-          </div>
+          <p class="room-goal">{goal}</p>
         </div>
-        <div class="actions">
-          <Button class="small" onClick={() => void share()}>
+        <div class="room-invitation">
+          <CopyControl value={id} label={t("copyCode")} className="room-code-copy">
+            <span class="room-code" translate={false}>
+              {id}
+            </span>
+          </CopyControl>
+          <CopyControl value={invitation(id)} label={t("copyLink")}>
             {t("invite")}
-          </Button>
-          <Button
-            class="small danger"
-            disabled={busy}
-            onClick={() => {
-              if (player && room.started && !room.finished) setConfirm(true);
-              else void leave();
-            }}
-          >
-            {t("leave")}
-          </Button>
+          </CopyControl>
         </div>
       </div>
       <p
-        class={`game-status ${online && player && role === state.turn && room.started && !room.finished ? "your-turn" : ""}`}
+        class={`game-status ${online && player && role === state.turn && room.started && !room.finished ? "your-turn" : ""} ${room.finished ? "finished" : ""}`}
         role="status"
       >
+        <span class="turn-dot" />
         {text}
         {!online && ` · ${t("reconnecting")}`}
       </p>
       {error && <Notice error>{error}</Notice>}
-      {message && <Notice>{message}</Notice>}
       {room.nextRoom && (
         <Notice>
           <a
@@ -239,123 +221,94 @@ export function RoomPage({
       )}
       <div class="room-layout">
         <div class="play-area">
-          <div ref={stage} class="game-stage">
-            <GameBoard
-              game={room.game}
-              state={replayState(room.game, state, index, role)}
-              actor={role}
-              enabled={canMove}
-              own={room.game === "battleship" && showOwn}
-              vertical={vertical}
-              onMove={(move) => void act(ROOM_ACTION.move, move)}
-            />
-          </div>
-          <div ref={controls} class="game-controls">
-            {!room.started && !room.finished && player && (
-              <div class="preparation">
-                <FieldSide
-                  spec={spec}
-                  role={role}
-                  seats={room.seats.map((seat) => seat.name)}
-                  busy={busy || !online}
-                  change={(seat) => void act(ROOM_ACTION.seat, { seat })}
-                />
-                <Button
-                  class={room.seats[role].ready ? "" : "primary"}
-                  disabled={busy || !online || Boolean(room.swap)}
-                  onClick={() => void act(ROOM_ACTION.ready)}
-                >
-                  {t(room.seats[role].ready ? "notReady" : "ready")}
-                </Button>
+          {!room.started && !room.finished && player && (
+            <div class="preparation">
+              <div class="preparation-heading">
+                <h2>{t("roomPreparation")}</h2>
+                <p>{t("readyHint")}</p>
               </div>
-            )}
-            {room.swap && (
-              <Notice>
-                {t("swapRequest", { from: sideName(spec, room.swap.from), to: sideName(spec, room.swap.to) })}
-                {player && (role === room.swap.from || role === room.swap.to) && (
-                  <div class="actions">
-                    {role === room.swap.to && (
-                      <Button
-                        class="small primary"
-                        disabled={busy}
-                        onClick={() => void act(ROOM_ACTION.acceptSwap)}
-                      >
-                        {t("acceptSwap")}
-                      </Button>
-                    )}
-                    <Button class="small" disabled={busy} onClick={() => void act(ROOM_ACTION.cancelSwap)}>
-                      {t("declineSwap")}
-                    </Button>
-                  </div>
-                )}
-              </Notice>
-            )}
-            {room.game === "battleship" &&
-              room.started &&
-              (state.phase === "setup" && player && !state.ready?.[role] ? (
-                <>
-                  <p class="fleet-help">
-                    {state.fleet?.length
-                      ? t("nextShip", { n: state.fleet[0], fleet: state.fleet.join(", ") })
-                      : t("fleetPlaced")}
-                  </p>
-                  <div class="actions fleet-actions">
-                    <Button class="small" disabled={busy} onClick={() => setVertical(!vertical)}>
-                      {t(vertical ? "vertical" : "horizontal")}
-                    </Button>
-                    <Button
-                      class="small"
-                      disabled={busy || !online}
-                      onClick={() => void act(ROOM_ACTION.move, { kind: "shuffle" })}
-                    >
-                      {t("shuffle")}
-                    </Button>
-                    <Button
-                      class="small"
-                      disabled={busy || !online}
-                      onClick={() => void act(ROOM_ACTION.move, { kind: "clear" })}
-                    >
-                      {t("clear")}
-                    </Button>
+              <FieldSide
+                spec={spec}
+                role={role}
+                seats={room.seats.map((seat) => seat.name)}
+                busy={busy || !online}
+                change={(seat) => void act(ROOM_ACTION.seat, { seat })}
+              />
+              <Button
+                class={room.seats[role].ready ? "" : "primary"}
+                disabled={busy || !online || Boolean(room.swap)}
+                onClick={() => void act(ROOM_ACTION.ready)}
+              >
+                <ActionIcon name="check" />
+                {t(room.seats[role].ready ? "notReady" : "ready")}
+              </Button>
+            </div>
+          )}
+          {room.swap && (
+            <Notice>
+              {t("swapRequest", { from: sideName(spec, room.swap.from), to: sideName(spec, room.swap.to) })}
+              {player && (role === room.swap.from || role === room.swap.to) && (
+                <span class="actions">
+                  {role === room.swap.to && (
                     <Button
                       class="small primary"
-                      disabled={busy || !online || Boolean(state.fleet?.length)}
-                      onClick={() => void act(ROOM_ACTION.move, { kind: "ready" })}
+                      disabled={busy}
+                      onClick={() => void act(ROOM_ACTION.acceptSwap)}
                     >
-                      {t("ready")}
+                      {t("acceptSwap")}
                     </Button>
-                  </div>
-                </>
-              ) : state.phase !== "setup" ? (
-                <fieldset class="field-switch" aria-label={t("board")}>
-                  {[false, true].map((own) => (
-                    <Button
-                      key={String(own)}
-                      class={`small ${ownField === own ? "selected" : ""}`}
-                      aria-pressed={ownField === own}
-                      onClick={() => setOwnField(own)}
-                    >
-                      {player
-                        ? t(own ? "yourField" : "enemyField")
-                        : t("shotsBy", { name: room.seats[own ? 1 : 0].name })}
-                    </Button>
-                  ))}
-                </fieldset>
-              ) : null)}
-            {(room.finished || (total > 0 && room.game !== "battleship")) && (
-              <MoveReview
-                index={index}
-                total={total}
-                change={(next) => setCursor(next === total ? null : next)}
+                  )}
+                  <Button class="small" disabled={busy} onClick={() => void act(ROOM_ACTION.cancelSwap)}>
+                    {t("declineSwap")}
+                  </Button>
+                </span>
+              )}
+            </Notice>
+          )}
+          <div ref={stage} class="game-stage">
+            {naval ? (
+              room.started || room.finished ? (
+                <NavalGame
+                  key={`${id}:${current.round}:${role}`}
+                  state={state}
+                  actor={role}
+                  enabled={canMove}
+                  playerNames={room.seats.map((seat) => seat.name)}
+                  onAction={(values) => act(ROOM_ACTION.move, values)}
+                />
+              ) : (
+                <div class="prestart-preview">
+                  <img src="/battleship.svg" width="160" height="132" alt="" />
+                  <p>{t("fleetReadyHint")}</p>
+                </div>
+              )
+            ) : (
+              <GameBoard
+                game={room.game}
+                state={state}
+                actor={role}
+                enabled={canMove}
+                onMove={(move) => void act(ROOM_ACTION.move, move)}
               />
             )}
-            {room.finished && player && (
-              <a class="button primary rematch" href={`/#/new/${room.game}?from=${id}`}>
-                {t("newGame")}
-              </a>
+          </div>
+          <div ref={controls} class="game-controls">
+            {room.finished && (
+              <div class="finished-actions">
+                {player && (
+                  <a class="button primary" href={`/#/new/${room.game}?from=${id}`}>
+                    <ActionIcon name="plus" />
+                    {t("newGame")}
+                  </a>
+                )}
+                <a class="button" href={`/#/history?code=${id}`}>
+                  <ActionIcon name="clock" />
+                  {t("history")}
+                </a>
+              </div>
             )}
             {!player && !current.name && (
-              <a class="button primary" href={invitation(id)}>
+              <a class="button primary" href={invitation(id, { watch: true })}>
                 {t("continue")}
               </a>
             )}
@@ -376,45 +329,49 @@ export function RoomPage({
         </div>
         <aside class="room-sidebar" aria-label={t("playerCount")}>
           <div class="seat-list">
-            {room.seats.map((seat, seatIndex) => (
+            {room.seats.map((seat, index) => (
               <div
-                class={`seat ${seatIndex === role ? "is-you" : ""} player-${seatIndex + 1}`}
-                key={seatIndex}
+                class={`seat ${index === role ? "is-you" : ""} ${state.turn === index && room.started && !room.finished ? "is-turn" : ""} player-${index + 1}`}
+                key={index}
               >
-                <span class="seat-number">{seatIndex + 1}</span>
+                <span class="seat-number">
+                  {room.game === "tictactoe" ? <Mark player={index + 1} /> : index + 1}
+                </span>
                 <div>
-                  <strong>{seat.name || t("free")}</strong>
+                  <strong>
+                    {seat.name || t("free")}
+                    {index === role && <small>{t("you")}</small>}
+                  </strong>
                   <span class="seat-presence">
-                    {sideName(spec, seatIndex)} ·{" "}
+                    {sideName(spec, index)} ·{" "}
                     {t(
                       !seat.taken
                         ? "waitingPlayer"
-                        : state.phase === "setup" && room.started
-                          ? state.ready?.[seatIndex]
+                        : state.phase === GAME_STATE.setup && room.started
+                          ? state.ready?.[index]
                             ? "fleetPrepared"
                             : "placingFleet"
                           : !room.started && seat.ready
                             ? "readyLabel"
-                            : seatIndex === role
-                              ? "you"
-                              : seat.online
-                                ? "online"
-                                : "returnGrace",
+                            : seat.online
+                              ? "online"
+                              : "returnGrace",
                     )}
                   </span>
                 </div>
-                {state.scores?.length ? <strong class="seat-score">{state.scores[seatIndex]}</strong> : null}
+                {state.scores?.length ? <strong class="seat-score">{state.scores[index]}</strong> : null}
               </div>
             ))}
           </div>
-          <p class="spectator-count muted">{t("spectators", { n: room.spectators })}</p>
-          <details class="room-rules">
-            <summary>{t("rules")}</summary>
-            <p>{translated(spec, "rules")}</p>
-          </details>
-          <Button class="small spectator-invite" onClick={() => void share(true)}>
-            {t("inviteWatch")}
-          </Button>
+          <p class="spectator-count muted">
+            <ActionIcon name="eye" />
+            {t("spectators", { n: room.spectators })}
+          </p>
+          <CopyControl
+            value={invitation(id, { watch: true })}
+            label={t("inviteWatch")}
+            className="spectator-invite"
+          />
         </aside>
       </div>
       {confirm && <ConfirmLeave code={id} cancel={() => setConfirm(false)} confirm={() => void leave()} />}
@@ -435,21 +392,23 @@ function FieldSide({
   change: (seat: number) => void;
 }) {
   return (
-    <label class="side-choice">
-      {t("yourSide")}
-      <select
-        value={role}
-        aria-label={t("chooseSeat")}
-        disabled={busy}
-        onChange={(event) => change(Number(event.currentTarget.value))}
-      >
+    <fieldset class="side-choice">
+      <legend>{t("yourSide")}</legend>
+      <div class="side-buttons">
         {seats.map((name, index) => (
-          <option value={index} key={index}>
+          <Button
+            key={index}
+            class={`side-option player-${index + 1}`}
+            aria-pressed={role === index}
+            disabled={busy || index === role}
+            onClick={() => change(index)}
+          >
+            <span class="side-dot" />
             {sideName(spec, index)}
-            {index !== role && name ? ` · ${name}` : ""}
-          </option>
+            {index !== role && name && <small>{name}</small>}
+          </Button>
         ))}
-      </select>
-    </label>
+      </div>
+    </fieldset>
   );
 }

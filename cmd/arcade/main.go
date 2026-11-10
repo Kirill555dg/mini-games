@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"flag"
+	"github.com/Kirill555dg/mini-games/internal/availability"
 	"github.com/Kirill555dg/mini-games/internal/httpapi"
 	"github.com/Kirill555dg/mini-games/internal/rooms"
 	"github.com/Kirill555dg/mini-games/internal/telemetry"
@@ -14,6 +15,7 @@ import (
 	"net/url"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"syscall"
 	"time"
 )
@@ -53,6 +55,16 @@ func main() {
 	}
 	defer counters.Close()
 	api.SetCounters(counters)
+	statusPath := ""
+	if *history != "" {
+		statusPath = filepath.Join(filepath.Dir(*history), availability.Filename)
+	}
+	observations, err := availability.Open(statusPath)
+	if err != nil {
+		log.Fatal("Cannot load application status history; existing file preserved")
+	}
+	defer observations.Close()
+	api.SetAvailability(observations)
 	api.AccessLog = *accessLog
 	var handler http.Handler = api
 	if dev && *web != "" {
@@ -81,6 +93,20 @@ func main() {
 	server := &http.Server{Handler: handler, ReadTimeout: httpapi.ReadTimeout, ReadHeaderTimeout: httpapi.ReadTimeout, IdleTimeout: httpapi.IdleTimeout, MaxHeaderBytes: httpapi.MaxHeaderBytes}
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
+	go func() {
+		ticker := time.NewTicker(availability.SampleInterval)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-ticker.C:
+				if observations.Pulse() != nil {
+					log.Print("Application status history could not be saved")
+				}
+			}
+		}
+	}()
 	go func() {
 		<-ctx.Done()
 		h.Close()
