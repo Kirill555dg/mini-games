@@ -82,8 +82,26 @@
           "hit": {
             "type": "boolean"
           },
+          "nextBoard": {
+            "type": "integer"
+          },
           "player": {
             "type": "integer"
+          },
+          "regionResult": {
+            "type": "integer"
+          },
+          "sunk": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array"
+          },
+          "water": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array"
           }
         },
         "required": [
@@ -170,6 +188,9 @@
       "engine_State": {
         "additionalProperties": false,
         "properties": {
+          "activeBoard": {
+            "type": "integer"
+          },
           "board": {
             "items": {
               "type": "integer"
@@ -236,6 +257,21 @@
           "ready": {
             "items": {
               "type": "boolean"
+            },
+            "type": "array"
+          },
+          "regionLine": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array"
+          },
+          "regionSize": {
+            "type": "integer"
+          },
+          "regions": {
+            "items": {
+              "type": "integer"
             },
             "type": "array"
           },
@@ -853,9 +889,11 @@
     "setup": "setup"
   },
   "x-naval-cells": {
+    "clear": -2,
     "hit": 2,
     "miss": -1,
     "ship": 1,
+    "sunk": 3,
     "water": 0
   },
   "x-room-actions": {

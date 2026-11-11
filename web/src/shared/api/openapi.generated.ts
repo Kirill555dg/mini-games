@@ -140,7 +140,11 @@ export interface components {
             boxes?: number[];
             cell: number;
             hit?: boolean;
+            nextBoard?: number;
             player: number;
+            regionResult?: number;
+            sunk?: number[];
+            water?: number[];
         };
         engine_Placement: {
             cell: number;
@@ -163,6 +167,7 @@ export interface components {
             };
         };
         engine_State: {
+            activeBoard?: number;
             board?: number[];
             boxes?: number[];
             enemy?: number[];
@@ -176,6 +181,9 @@ export interface components {
             phase: string;
             placements?: components["schemas"]["engine_Placement"][];
             ready?: boolean[];
+            regionLine?: number[];
+            regionSize?: number;
+            regions?: number[];
             scores?: number[];
             turn: number;
             width: number;

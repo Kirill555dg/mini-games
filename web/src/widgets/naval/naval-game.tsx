@@ -10,6 +10,7 @@ import "@/widgets/naval/naval-game.css";
 
 type FieldMode = "turn" | "enemy" | "own" | "both";
 type Props = {
+  prepared?: boolean;
   state: GameState;
   actor: number;
   enabled: boolean;
@@ -17,11 +18,11 @@ type Props = {
   playerNames: string[];
 };
 
-export function NavalGame({ state, actor, enabled, onAction, playerNames }: Props) {
+export function NavalGame({ state, actor, enabled, onAction, playerNames, prepared = true }: Props) {
   const [mode, setMode] = useState<FieldMode>("turn");
   const player = actor >= 0 && actor < playerNames.length;
   const setup = state.phase === GAME_STATE.setup;
-  const editing = player && setup && !state.ready?.[actor];
+  const editing = prepared && player && setup && !state.ready?.[actor];
   const ownPlayer = player ? actor : 0;
   const enemyPlayer = player ? 1 - actor : 1;
   const defender = 1 - state.turn;
@@ -35,26 +36,6 @@ export function NavalGame({ state, actor, enabled, onAction, playerNames }: Prop
     : t("fieldOf", { name: playerNames[enemyPlayer] || t("player", { n: enemyPlayer + 1 }) });
   return (
     <div class="naval-game">
-      <fieldset class="naval-view-controls" aria-label={t("board")}>
-        {(
-          [
-            ["turn", t("fieldCurrent"), "arrow"],
-            ["enemy", enemyLabel, "ship"],
-            ["own", ownLabel, "ship"],
-            ["both", t("bothFields"), "grid"],
-          ] as const
-        ).map(([value, label, icon]) => (
-          <Button
-            key={value}
-            class={`small ${mode === value ? "selected" : ""}`}
-            aria-pressed={mode === value}
-            onClick={() => setMode(value)}
-          >
-            <ActionIcon name={icon} />
-            {label}
-          </Button>
-        ))}
-      </fieldset>
       <div class="naval-fields" data-mobile-view={mobileView}>
         {([true, false] as const).map((own) => {
           const index = own ? ownPlayer : enemyPlayer;
@@ -100,12 +81,40 @@ export function NavalGame({ state, actor, enabled, onAction, playerNames }: Prop
                 </div>
               )}
               {setup && !(own && editing) && (
-                <p class="naval-field-note">{t(state.ready?.[index] ? "fleetPrepared" : "fleetWaiting")}</p>
+                <p class="naval-field-note">
+                  {t(!prepared ? "waitingReady" : state.ready?.[index] ? "fleetPrepared" : "fleetWaiting")}
+                </p>
               )}
             </section>
           );
         })}
       </div>
+      <fieldset class="naval-view-controls" aria-label={t("board")}>
+        {(
+          [
+            ["turn", t("fieldCurrent"), "arrow"],
+            ["enemy", enemyLabel, "ship"],
+            ["own", ownLabel, "ship"],
+            ["both", t("bothFields"), "grid"],
+          ] as const
+        ).map(([value, label, icon]) => (
+          <Button
+            key={value}
+            class={`small ${mode === value ? "selected" : ""}`}
+            aria-pressed={mode === value}
+            onClick={() => setMode(value)}
+          >
+            <ActionIcon name={icon} />
+            {label}
+          </Button>
+        ))}
+      </fieldset>
+      {state.moves?.at(-1)?.sunk?.length ? (
+        <p class="naval-result" role="status">
+          {t("shipSunk")}
+        </p>
+      ) : null}
+      {!setup && <p class="naval-field-note">{t("navalLegend")}</p>}
     </div>
   );
 }

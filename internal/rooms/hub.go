@@ -228,12 +228,15 @@ func (h *Hub) view(r *room, k Key) View {
 	return v
 }
 func (h *Hub) lobby() Lobby {
-	out := Lobby{Instance: h.instance, Revision: h.revision, TotalRooms: len(h.rooms), Rooms: []Summary{}, Games: games.Catalog()}
+	out := Lobby{Instance: h.instance, Revision: h.revision, Rooms: []Summary{}, Games: games.Catalog()}
 	for _, r := range h.rooms {
-		if len(out.Rooms) >= LobbyPageSize {
-			break
+		if r.winner != engine.NoWinner {
+			continue
 		}
-		out.Rooms = append(out.Rooms, h.summary(r))
+		out.TotalRooms++
+		if len(out.Rooms) < LobbyPageSize {
+			out.Rooms = append(out.Rooms, h.summary(r))
+		}
 	}
 	return out
 }

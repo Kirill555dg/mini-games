@@ -1,0 +1,35 @@
+@layer components {
+  .game-rules {
+    display: contents;
+  }
+  .rules-disclosure {
+    grid-column: 1 / -1;
+    flex-basis: 100%;
+    position: relative;
+    padding: 18px;
+    padding-right: 48px;
+    background: var(--surface-alt);
+    border-radius: 12px;
+    text-align: left;
+    min-width: 0;
+  }
+  .rules-disclosure h3 {
+    padding-right: 8px;
+  }
+  .rules-disclosure p {
+    color: var(--muted);
+    font-size: 13px;
+    margin-top: 10px;
+  }
+  .rules-disclosure .rules-close {
+    position: absolute;
+    right: 4px;
+    top: 4px;
+    min-height: 40px;
+    width: 40px;
+    padding: 9px;
+    border-color: transparent;
+    background: transparent;
+    box-shadow: none;
+  }
+}

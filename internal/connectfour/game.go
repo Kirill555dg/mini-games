@@ -3,7 +3,6 @@ package connectfour
 
 import (
 	"github.com/Kirill555dg/mini-games/internal/engine"
-	"github.com/Kirill555dg/mini-games/internal/tictactoe"
 )
 
 const Width, Height, WinLength = 7, 6, 4
@@ -33,7 +32,7 @@ func (g *Game) Apply(player int, a engine.Action) error {
 	}
 	s.Board[cell] = player + 1
 	s.Moves = append(s.Moves, engine.Move{Player: player, Cell: cell})
-	s.Line = tictactoe.WinningLine(s.Board, Width, Height, WinLength, player+1)
+	s.Line = engine.WinningLine(s.Board, Width, Height, WinLength, player+1)
 	if len(s.Line) > 0 {
 		s.Winner = player
 		s.Phase = engine.Finished

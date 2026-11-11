@@ -1,0 +1,114 @@
+@layer components {
+  .inline-entry {
+    padding: 20px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface);
+    display: grid;
+    grid-template-columns: minmax(180px, 0.7fr) minmax(0, 1.4fr);
+    align-items: center;
+    gap: 24px;
+  }
+  .join-heading h2 {
+    font-size: 20px;
+    margin-bottom: 6px;
+  }
+  .join-heading p {
+    font-size: 12px;
+    color: var(--muted);
+    max-width: 32ch;
+  }
+  .join-form {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: end;
+    gap: 10px 14px;
+  }
+  .join-inputs {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+  .join-inputs .field {
+    min-width: 0;
+  }
+  .join-form .field-label {
+    font-size: 12px;
+    margin-bottom: 5px;
+  }
+  .join-form input {
+    min-width: 0;
+    padding-inline: 10px;
+    font-size: 14px;
+  }
+  .name-input,
+  .code-input {
+    text-overflow: ellipsis;
+  }
+  .join-form .form-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-column: 2;
+    grid-row: 1;
+    gap: 8px;
+    margin: 0;
+  }
+  .join-form .form-actions .button {
+    padding-inline: 12px;
+    white-space: nowrap;
+  }
+  .join-form .notice,
+  .join-preview {
+    grid-column: 1 / -1;
+    margin: 0;
+  }
+  .join-preview {
+    color: var(--muted);
+    font-size: 12px;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+}
+@layer responsive {
+  @media (max-width: 1050px) {
+    .inline-entry {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 16px;
+    }
+    .join-heading {
+      display: flex;
+      align-items: baseline;
+      gap: 16px;
+    }
+    .join-heading h2 {
+      flex-shrink: 0;
+    }
+    .join-heading p {
+      max-width: none;
+    }
+  }
+  @media (max-width: 600px) {
+    .inline-entry {
+      padding: 16px;
+      gap: 12px;
+    }
+    .join-heading {
+      display: block;
+    }
+    .join-form {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 12px;
+    }
+    .join-form .form-actions {
+      grid-column: 1;
+      grid-row: auto;
+    }
+    .join-inputs {
+      gap: 10px;
+    }
+    .join-form .form-actions .button {
+      min-height: 44px;
+    }
+  }
+}

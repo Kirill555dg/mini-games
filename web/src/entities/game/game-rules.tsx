@@ -3,6 +3,7 @@ import type { GameSpec } from "@/shared/api/game-api";
 import { t, translated } from "@/shared/i18n/i18n";
 import { ActionIcon } from "@/shared/ui/action-icon";
 import { Button } from "@/shared/ui/ui-controls";
+import "@/entities/game/game-rules.css";
 
 export function GameRules({ game, className = "" }: { game?: GameSpec; className?: string }) {
   const [open, setOpen] = useState(false),
@@ -18,13 +19,14 @@ export function GameRules({ game, className = "" }: { game?: GameSpec; className
         <h3>{translated(game, "title")}</h3>
         <p>{translated(game, "rules")}</p>
         <Button
-          class="small"
+          class="icon-button rules-close"
+          aria-label={t("closeRules")}
           onClick={() => {
             setOpen(false);
             container.current?.querySelector("button")?.focus();
           }}
         >
-          {t("close")}
+          <ActionIcon name="close" />
         </Button>
       </div>
     </div>

@@ -1,0 +1,401 @@
+@layer layout {
+  .room-page {
+    max-width: 640px;
+    margin-inline: auto;
+    padding: 14px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+  }
+  .room-page.naval-room {
+    max-width: 1160px;
+  }
+  .room-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .room-toolbar h1 {
+    font-size: 24px;
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+  .room-toolbar .room-back {
+    width: 38px;
+    min-height: 38px;
+    padding: 8px;
+    flex-shrink: 0;
+  }
+  .room-goal {
+    margin-left: auto;
+    color: var(--muted);
+    font-size: 12px;
+    white-space: nowrap;
+  }
+  .room-meta {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr) 54px;
+    align-items: stretch;
+    gap: 8px;
+    margin: 8px 0;
+  }
+  .room-meta .copy-control {
+    display: flex;
+    min-width: 0;
+  }
+  :where(.room-meta .copy-control) > .button {
+    width: 100%;
+  }
+  .room-meta .copy-control:first-child .copy-fallback {
+    left: 0;
+    right: auto;
+  }
+  .room-meta .copy-control:nth-child(2) .copy-fallback {
+    left: 50%;
+    right: auto;
+    transform: translateX(-50%);
+  }
+  .room-meta .button {
+    min-height: 34px;
+    padding: 6px 8px;
+    font-size: 12px;
+    white-space: nowrap;
+    gap: 6px;
+  }
+  .room-meta .action-icon {
+    width: 16px;
+    height: 16px;
+  }
+  .room-meta .room-code {
+    font-size: 14px;
+    letter-spacing: 1.3px;
+  }
+  .room-matchbar {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 12px;
+    min-height: 38px;
+    margin-bottom: 10px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+  }
+  .game-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    min-width: 0;
+    font-size: 13px;
+    font-weight: 650;
+  }
+  .game-status > span:last-child {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .game-status.your-turn {
+    color: var(--primary);
+  }
+  .game-status.finished {
+    color: var(--success);
+  }
+  .room-matchbar > .button {
+    flex-shrink: 0;
+    min-height: 34px;
+    padding: 6px 10px;
+    font-size: 12px;
+  }
+  .game-stage {
+    display: grid;
+    place-items: start center;
+    width: 100%;
+  }
+  .game-controls {
+    margin: 12px auto 0;
+    text-align: center;
+  }
+  .seat-list {
+    display: grid;
+    grid-template-columns: repeat(var(--seats), minmax(0, 1fr));
+    gap: 8px;
+  }
+  .seat-card {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 11px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--surface);
+    min-width: 0;
+    text-align: left;
+  }
+  .seat-card:disabled {
+    opacity: 1;
+  }
+  .seat-card:enabled:hover,
+  .seat-card[aria-pressed="true"] {
+    border-color: var(--player);
+    background: color-mix(in srgb, var(--player) 7%, var(--surface));
+  }
+  .seat-card.is-turn {
+    border-color: var(--player);
+  }
+  .seat-number {
+    flex: 0 0 28px;
+    height: 28px;
+    display: grid;
+    place-items: center;
+    color: var(--player);
+    background: color-mix(in srgb, var(--player) 13%, var(--surface));
+    border-radius: 50%;
+    padding: 4px;
+    font-weight: 700;
+  }
+  .seat-copy {
+    min-width: 0;
+    flex: 1;
+  }
+  .seat-name {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    min-width: 0;
+  }
+  .seat-name strong {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 13px;
+  }
+  .seat-name small {
+    flex-shrink: 0;
+    font-size: 10px;
+    color: var(--primary);
+  }
+  .seat-presence {
+    display: block;
+    color: var(--muted);
+    font-size: 10px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    margin-top: 2px;
+  }
+  .seat-card > .action-icon {
+    flex-shrink: 0;
+    width: 16px;
+    height: 16px;
+    color: var(--player);
+  }
+  .seat-score {
+    margin-left: auto;
+    color: var(--player);
+  }
+  .swap-request {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-radius: 12px;
+    background: var(--tint);
+    padding: 10px 12px;
+    margin-top: 8px;
+    font-size: 12px;
+    text-align: left;
+  }
+  .swap-request p {
+    flex: 1;
+  }
+  .swap-request .actions {
+    gap: 6px;
+  }
+  .room-secondary {
+    display: grid;
+    gap: 12px;
+    margin: 10px auto 0;
+  }
+  .room-secondary .rules-button {
+    width: 100%;
+    min-height: 36px;
+    padding: 7px 12px;
+    font-size: 12px;
+  }
+  .room-secondary .rules-disclosure {
+    width: 100%;
+  }
+}
+@layer responsive {
+  .in-room .site-header {
+    min-height: 50px;
+    padding-block: 6px;
+    gap: 10px;
+    display: flex;
+  }
+  .in-room .brand {
+    font-size: 18px;
+  }
+  .in-room .brand img {
+    width: 26px;
+    height: 26px;
+  }
+  .in-room .theme-toggle {
+    width: 34px;
+    height: 34px;
+  }
+  .in-room .language-button {
+    min-height: 28px;
+    padding: 4px 5px;
+  }
+  .in-room .language-button > span {
+    display: none;
+  }
+  .in-room .connection {
+    font-size: 0;
+    gap: 0;
+  }
+  .in-room main {
+    padding-top: 8px;
+    padding-bottom: 16px;
+  }
+  @media (max-width: 760px) {
+    .room-page {
+      padding: 10px;
+      border-radius: 15px;
+    }
+    .room-toolbar h1 {
+      font-size: 19px;
+    }
+    .room-toolbar .room-goal {
+      font-size: 10px;
+    }
+    .room-toolbar .room-back {
+      width: 32px;
+      min-height: 32px;
+      padding: 6px;
+    }
+    .seat-list {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .seat-card {
+      padding: 8px;
+      gap: 6px;
+    }
+    .seat-name strong {
+      font-size: 12px;
+    }
+    .seat-number {
+      flex-basis: 24px;
+      height: 24px;
+    }
+    .swap-request {
+      flex-wrap: wrap;
+    }
+    .swap-request .actions {
+      margin-left: auto;
+    }
+  }
+  @media (max-width: 360px) {
+    .in-room .brand {
+      font-size: 16px;
+      gap: 6px;
+    }
+    .room-toolbar h1 {
+      font-size: 17px;
+    }
+    .room-meta {
+      gap: 6px;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr) 44px;
+    }
+    .room-meta .button {
+      padding-inline: 8px;
+    }
+    .room-toolbar .room-goal {
+      font-size: 9px;
+    }
+    .seat-card > .action-icon {
+      width: 14px;
+      height: 14px;
+    }
+  }
+  @media (min-width: 600px) and (max-height: 500px) {
+    .room-page {
+      display: grid;
+      grid-template-columns: 240px minmax(0, 1fr);
+      align-items: start;
+      gap: 8px 16px;
+      max-width: 1160px;
+      padding: 10px;
+    }
+    .room-toolbar,
+    .room-meta,
+    .room-matchbar,
+    .game-controls,
+    .room-secondary,
+    .room-page > .notice {
+      grid-column: 1;
+      margin: 0;
+    }
+    .room-toolbar {
+      display: grid;
+      grid-template-columns: 32px minmax(0, 1fr);
+      gap: 4px 8px;
+    }
+    .room-toolbar h1 {
+      font-size: 17px;
+    }
+    .room-toolbar .room-back {
+      width: 32px;
+      min-height: 32px;
+      padding: 6px;
+    }
+    .room-toolbar .room-goal {
+      grid-column: 2;
+      margin: 0;
+      font-size: 10px;
+    }
+    .room-meta {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 38px;
+      gap: 6px;
+    }
+    .room-meta .button {
+      padding-inline: 5px;
+      font-size: 11px;
+      gap: 4px;
+    }
+    .room-meta .room-code {
+      font-size: 12px;
+      letter-spacing: 1px;
+    }
+    .room-meta .action-icon {
+      width: 14px;
+      height: 14px;
+    }
+    .room-matchbar {
+      gap: 6px;
+    }
+    .game-status {
+      font-size: 11px;
+    }
+    .game-stage {
+      grid-column: 2;
+      grid-row: 1 / span 6;
+    }
+    .seat-list {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .seat-card {
+      padding: 7px;
+      gap: 5px;
+    }
+    .seat-name strong {
+      font-size: 11px;
+    }
+    .seat-number {
+      flex-basis: 22px;
+      height: 22px;
+    }
+  }
+}

@@ -7,10 +7,13 @@
     display: none;
   }
   .naval-fields {
+    --naval-gap: 20px;
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 28px;
+    gap: var(--naval-gap);
     align-items: start;
+    max-width: calc(var(--board-size, 560px) * 2 + var(--naval-gap));
+    margin-inline: auto;
   }
   .naval-field {
     min-width: 0;
@@ -84,7 +87,7 @@
     font-size: 13px;
     color: var(--muted);
   }
-  @media (max-width: 700px) {
+  @media (max-width: 700px), (max-height: 500px) {
     .naval-chart {
       grid-template-columns: 20px minmax(0, 1fr);
       grid-template-rows: 20px minmax(0, 1fr);
@@ -93,7 +96,7 @@
       display: flex;
       flex-wrap: wrap;
       gap: 6px;
-      margin-bottom: 16px;
+      margin-top: 12px;
     }
     .naval-view-controls .button {
       flex: 1 1 auto;
@@ -108,6 +111,7 @@
     .naval-fields {
       grid-template-columns: minmax(0, 1fr);
       gap: 24px;
+      max-width: var(--board-size, 560px);
     }
     .naval-fields[data-mobile-view="own"] .naval-enemy,
     .naval-fields[data-mobile-view="enemy"] .naval-own {

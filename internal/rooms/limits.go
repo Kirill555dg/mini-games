@@ -4,7 +4,9 @@ import "time"
 
 // Admission is based on a memory budget, not a product limit on room counts.
 const StateBudgetBytes = 16 * 1024 * 1024
-const roomBytes = 16 * 1024
+
+// Includes maximum move-slice capacity, nested game state and membership overhead.
+const roomBytes = 48 * 1024
 const memberBytes = 512
 const streamBytes = 64 * 1024
 const CodeLength = 6

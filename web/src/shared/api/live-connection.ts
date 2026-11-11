@@ -26,7 +26,7 @@ export function live<T extends Lobby | RoomView>(
       update(null);
       return;
     }
-    connection(true);
+    connection(navigator.onLine !== false);
     if (data && data.instance === instance && data.revision < revision) return;
     if (data) {
       instance = data.instance;
@@ -35,7 +35,7 @@ export function live<T extends Lobby | RoomView>(
     update(data);
   }
   async function poll() {
-    if (polling || stopped || document.hidden) return;
+    if (polling || stopped || document.hidden || navigator.onLine === false) return;
     polling = true;
     try {
       const value = room
@@ -52,7 +52,7 @@ export function live<T extends Lobby | RoomView>(
     }
   }
   function connect() {
-    if (stopped || !window.EventSource) return;
+    if (stopped || !window.EventSource || navigator.onLine === false) return;
     source = new EventSource(`/game-api/events${room ? `?room=${encodeURIComponent(room)}` : ""}`);
     lastEvent = Date.now();
     streamHealthy = false;
@@ -85,12 +85,27 @@ export function live<T extends Lobby | RoomView>(
   const visible = () => {
     if (!document.hidden) void poll();
   };
+  const offline = () => {
+    streamHealthy = false;
+    source?.close();
+    source = undefined;
+    connection(false);
+  };
+  const online = () => {
+    source?.close();
+    connect();
+    void poll();
+  };
   document.addEventListener("visibilitychange", visible);
+  window.addEventListener("offline", offline);
+  window.addEventListener("online", online);
   return () => {
     stopped = true;
     source?.close();
     controller.abort();
     clearInterval(timer);
     document.removeEventListener("visibilitychange", visible);
+    window.removeEventListener("offline", offline);
+    window.removeEventListener("online", online);
   };
 }

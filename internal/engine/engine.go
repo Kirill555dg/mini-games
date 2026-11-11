@@ -32,6 +32,13 @@ type Move struct {
 	Cell   int   `json:"cell"`
 	Hit    bool  `json:"hit,omitempty"`
 	Boxes  []int `json:"boxes,omitempty"`
+	// Sunk and Water reveal only a destroyed ship and newly deduced empty water.
+	Sunk  []int `json:"sunk,omitempty"`
+	Water []int `json:"water,omitempty"`
+	// RegionResult is a local board's final mark, or Draw, when this move closes it.
+	RegionResult int `json:"regionResult,omitempty"`
+	// NextBoard records the next forced destination. Nil permits free choice.
+	NextBoard *int `json:"nextBoard,omitempty"`
 }
 
 // State contains only information the viewer is allowed to receive.
@@ -43,6 +50,10 @@ type State struct {
 	Turn         int         `json:"turn"`
 	Winner       int         `json:"winner"`
 	WinLength    int         `json:"winLength,omitempty"`
+	RegionSize   int         `json:"regionSize,omitempty"`
+	Regions      []int       `json:"regions,omitempty"`
+	RegionLine   []int       `json:"regionLine,omitempty"`
+	ActiveBoard  *int        `json:"activeBoard,omitempty"`
 	Board        []int       `json:"board,omitempty"`
 	Line         []int       `json:"line,omitempty"`
 	Moves        []Move      `json:"moves,omitempty"`
@@ -92,10 +103,10 @@ func (s Spec) DefaultSize() int {
 func Copy(s State) State {
 	s.Board = append([]int(nil), s.Board...)
 	s.Line = append([]int(nil), s.Line...)
-	s.Moves = append([]Move(nil), s.Moves...)
-	for i := range s.Moves {
-		s.Moves[i].Boxes = append([]int(nil), s.Moves[i].Boxes...)
-	}
+	s.Regions = append([]int(nil), s.Regions...)
+	s.RegionLine = append([]int(nil), s.RegionLine...)
+	s.ActiveBoard = copyIndex(s.ActiveBoard)
+	s.Moves = CopyMoves(s.Moves)
 	s.Scores = append([]int(nil), s.Scores...)
 	s.Boxes = append([]int(nil), s.Boxes...)
 	s.Own = append([]int(nil), s.Own...)
@@ -105,4 +116,24 @@ func Copy(s State) State {
 	s.FleetLengths = append([]int(nil), s.FleetLengths...)
 	s.Placements = append([]Placement(nil), s.Placements...)
 	return s
+}
+
+// CopyMoves detaches recorded per-move reveals from live game state.
+func CopyMoves(moves []Move) []Move {
+	out := append([]Move(nil), moves...)
+	for i := range out {
+		out[i].Boxes = append([]int(nil), out[i].Boxes...)
+		out[i].Sunk = append([]int(nil), out[i].Sunk...)
+		out[i].Water = append([]int(nil), out[i].Water...)
+		out[i].NextBoard = copyIndex(out[i].NextBoard)
+	}
+	return out
+}
+
+func copyIndex(index *int) *int {
+	if index == nil {
+		return nil
+	}
+	value := *index
+	return &value
 }

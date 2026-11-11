@@ -1,4 +1,4 @@
-type IconName =
+export type IconName =
   | "back"
   | "copy"
   | "link"
@@ -19,7 +19,8 @@ type IconName =
   | "moon"
   | "eye"
   | "grid"
-  | "ship";
+  | "ship"
+  | "switch";
 
 export function ActionIcon({ name, className = "" }: { name: IconName; className?: string }) {
   return (

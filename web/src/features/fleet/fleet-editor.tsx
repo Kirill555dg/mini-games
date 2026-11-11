@@ -57,6 +57,7 @@ export function FleetEditor({ state, enabled, onAction }: Props) {
   const [ghost, setGhost] = useState<Ghost | null>(null);
   const [dragging, setDragging] = useState(false);
   const [saveState, setSaveState] = useState<SaveState>("idle");
+  const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
   const [undoCount, setUndoCount] = useState(0);
   const [focusedCell, setFocusedCell] = useState(0);
@@ -72,7 +73,7 @@ export function FleetEditor({ state, enabled, onAction }: Props) {
   const suppressClick = useRef(false);
   const serverFingerprint = fleetFingerprint(state.placements || []);
   const lastServer = useRef(serverFingerprint);
-  const editable = enabled && !pending.current;
+  const editable = enabled && !saving;
 
   useEffect(() => {
     alive.current = true;
@@ -134,6 +135,7 @@ export function FleetEditor({ state, enabled, onAction }: Props) {
   async function persist(next: FleetPlacement[], deploy = false) {
     if (pending.current || !enabled) return;
     pending.current = true;
+    setSaving(true);
     retryDeploy.current = deploy;
     dirty.current = true;
     setSaveState("saving");
@@ -146,6 +148,7 @@ export function FleetEditor({ state, enabled, onAction }: Props) {
       // A transport failure must keep the editable draft and offer retry.
     } finally {
       pending.current = false;
+      if (alive.current) setSaving(false);
       if (alive.current && fingerprint === fleetFingerprint(draftRef.current)) {
         const saved = success || (!deploy && lastServer.current === fingerprint);
         dirty.current = !saved;
@@ -154,7 +157,7 @@ export function FleetEditor({ state, enabled, onAction }: Props) {
     }
   }
   function changeFleet(next: FleetPlacement[], remember = true) {
-    if (!editable) return;
+    if (!editable || pending.current) return;
     if (fleetFingerprint(next) === fleetFingerprint(draftRef.current)) return;
     if (remember) {
       history.current = [...history.current, copyFleet(draftRef.current)].slice(-FLEET_INTERACTION.undoLimit);
@@ -206,7 +209,7 @@ export function FleetEditor({ state, enabled, onAction }: Props) {
     changeFleet(draftRef.current.filter((item) => item.ship !== selected));
   }
   function undo() {
-    if (!editable) return;
+    if (!editable || pending.current) return;
     const previous = history.current.pop();
     if (!previous) return;
     setUndoCount(history.current.length);

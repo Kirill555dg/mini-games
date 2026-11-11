@@ -4,6 +4,7 @@ package battleship
 import (
 	"crypto/rand"
 	"math/big"
+	"slices"
 
 	"github.com/Kirill555dg/mini-games/internal/engine"
 )
@@ -15,7 +16,9 @@ const (
 	CellWater         = 0
 	CellShip          = 1
 	CellHit           = 2
+	CellSunk          = 3
 	CellMiss          = -1
+	CellClear         = -2
 	maxCells          = DefaultSize * DefaultSize
 	shuffleAttempts   = 100
 	placementAttempts = 1000
@@ -26,7 +29,7 @@ var compactFleet = [...]int{4, 3, 2, 2, 1}
 
 func Sizes() []int { return []int{DefaultSize, CompactSize} }
 func Cells() map[string]int {
-	return map[string]int{"water": CellWater, "ship": CellShip, "hit": CellHit, "miss": CellMiss}
+	return map[string]int{"water": CellWater, "ship": CellShip, "hit": CellHit, "sunk": CellSunk, "miss": CellMiss, "clear": CellClear}
 }
 
 type Game struct {
@@ -54,7 +57,7 @@ func (g *Game) fleet() []int {
 }
 func (g *Game) Clone() engine.Game {
 	c := *g
-	c.moves = append([]engine.Move(nil), g.moves...)
+	c.moves = engine.CopyMoves(g.moves)
 	for p := range c.placements {
 		c.placements[p] = append([]engine.Placement(nil), g.placements[p]...)
 	}
@@ -72,7 +75,7 @@ func (g *Game) phase() string {
 
 func (g *Game) View(viewer int) engine.State {
 	cells := g.size * g.size
-	s := engine.State{Width: g.size, Height: g.size, Phase: g.phase(), Turn: g.turn, Winner: g.winner, Ready: []bool{g.ready[0], g.ready[1]}, Moves: append([]engine.Move(nil), g.moves...)}
+	s := engine.State{Width: g.size, Height: g.size, Phase: g.phase(), Turn: g.turn, Winner: g.winner, Ready: []bool{g.ready[0], g.ready[1]}, Moves: engine.CopyMoves(g.moves)}
 	if viewer < 0 || viewer > 1 {
 		// Spectators receive only fired shots, never fleets or private drafts.
 		s.Own = append([]int(nil), g.shots[1][:cells]...)
@@ -228,10 +231,14 @@ func (g *Game) Apply(player int, a engine.Action) error {
 	if hit {
 		g.shots[player][a.Cell] = CellHit
 	}
-	g.moves = append(g.moves, engine.Move{Player: player, Cell: a.Cell, Hit: hit})
+	move := engine.Move{Player: player, Cell: a.Cell, Hit: hit}
+	if hit {
+		move.Sunk, move.Water = g.revealSunk(player, a.Cell)
+	}
+	g.moves = append(g.moves, move)
 	remaining := false
 	for cell, v := range g.boards[1-player][:g.size*g.size] {
-		if v != CellWater && g.shots[player][cell] != CellHit {
+		if v != CellWater && g.shots[player][cell] != CellHit && g.shots[player][cell] != CellSunk {
 			remaining = true
 			break
 		}
@@ -242,4 +249,45 @@ func (g *Game) Apply(player int, a engine.Action) error {
 		g.turn = 1 - player
 	}
 	return nil
+}
+
+// revealSunk exposes only fully hit ships. Separation proves their surrounding
+// water empty, so players need not waste turns on logically impossible targets.
+func (g *Game) revealSunk(player, cell int) ([]int, []int) {
+	for _, ship := range g.placements[1-player] {
+		step := 1
+		if ship.Vertical {
+			step = g.size
+		}
+		cells := make([]int, g.fleet()[ship.Ship])
+		for i := range cells {
+			cells[i] = ship.Cell + i*step
+		}
+		if !slices.Contains(cells, cell) {
+			continue
+		}
+		for _, index := range cells {
+			if g.shots[player][index] != CellHit {
+				return nil, nil
+			}
+		}
+		for _, index := range cells {
+			g.shots[player][index] = CellSunk
+		}
+		var water []int
+		for _, index := range cells {
+			r, c := index/g.size, index%g.size
+			for y := max(0, r-ShipGap); y <= min(g.size-1, r+ShipGap); y++ {
+				for x := max(0, c-ShipGap); x <= min(g.size-1, c+ShipGap); x++ {
+					i := y*g.size + x
+					if g.shots[player][i] == CellWater && g.boards[1-player][i] == CellWater {
+						g.shots[player][i] = CellClear
+						water = append(water, i)
+					}
+				}
+			}
+		}
+		return cells, water
+	}
+	return nil, nil
 }

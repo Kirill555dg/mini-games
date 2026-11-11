@@ -1,7 +1,7 @@
 import type { ComponentChildren } from "preact";
-import { useRef, useState } from "preact/hooks";
+import { useEffect, useRef, useState } from "preact/hooks";
 import { t } from "@/shared/i18n/i18n";
-import { ActionIcon } from "@/shared/ui/action-icon";
+import { ActionIcon, type IconName } from "@/shared/ui/action-icon";
 import { Button } from "@/shared/ui/ui-controls";
 
 export function CopyControl({
@@ -9,20 +9,27 @@ export function CopyControl({
   label,
   className = "",
   children,
+  icon = "copy",
 }: {
   value: string;
   label: string;
   className?: string;
   children?: ComponentChildren;
+  icon?: IconName;
 }) {
   const [copied, setCopied] = useState(false),
     [fallback, setFallback] = useState(false);
   const input = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    setCopied(false);
+    setFallback(false);
+  }, [value]);
   return (
     <span class={`copy-control ${className}`}>
       <Button
         class={copied ? "copy-success small" : "small"}
-        aria-label={copied ? t("copyDone") : label}
+        aria-label={label}
+        title={copied ? t("copyDone") : label}
         onClick={async () => {
           try {
             await navigator.clipboard.writeText(value);
@@ -38,7 +45,7 @@ export function CopyControl({
           }
         }}
       >
-        <ActionIcon name={copied ? "check" : "copy"} />
+        <ActionIcon name={copied ? "check" : icon} />
         {children || (copied ? t("copyDone") : label)}
       </Button>
       {copied && (

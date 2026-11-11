@@ -13,6 +13,7 @@
 - Run `gofmt`, `go vet ./...`, `go test -race ./...`. Test behavior: legal/illegal moves, private information, races, expiry, new room continuation, recovery and persistence failures.
 - Go wire types and domain constants own the API contract. Regenerate OpenAPI and frontend types together; do not patch generated files or maintain a second schema by hand.
 - Build stripped static Linux releases on the development machine or CI. VPS installation verifies and switches a prepared release; it never compiles or installs a toolchain.
+- Match history is disposable. Do not add compatibility layers or migrations for retired games, options or history formats; discard incompatible older match history. Persist application availability separately and retain its rolling month across updates and restarts.
 
 References: [Google Go style](https://google.github.io/styleguide/go/), [Go module layout](https://go.dev/doc/modules/layout). Use only the directories this application needs; `golang-standards/project-layout` is a community reference, not an official standard.
 

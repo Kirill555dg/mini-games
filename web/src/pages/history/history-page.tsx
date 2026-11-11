@@ -7,15 +7,19 @@ import { ActionIcon } from "@/shared/ui/action-icon";
 import { HISTORY_PAGE_SIZE } from "@/shared/ui/display-constants";
 import { Button, Heading, Notice } from "@/shared/ui/ui-controls";
 import { MoveReview } from "@/widgets/replay/move-review";
+import "@/pages/history/history-page.css";
 
 function filtersFromURL() {
   const params = new URLSearchParams(location.hash.split("?")[1]);
   return { games: params.getAll("game"), code: params.get("code") || "", match: params.get("match") || "" };
 }
+const COMPACT_FILTER_QUERY = "(max-width: 760px)";
+
 export function HistoryPage({ catalog }: { catalog: GameSpec[] }) {
   const [records, setRecords] = useState<Match[]>(),
     [error, setError] = useState(""),
     [attempt, setAttempt] = useState(0);
+  const [filterOpen, setFilterOpen] = useState(() => !matchMedia(COMPACT_FILTER_QUERY).matches);
   const [filters, setFilters] = useState(filtersFromURL),
     [visible, setVisible] = useState(HISTORY_PAGE_SIZE);
   useEffect(() => {
@@ -58,35 +62,51 @@ export function HistoryPage({ catalog }: { catalog: GameSpec[] }) {
   return (
     <section class="history-page">
       <Heading title={t("history")} hint={t("historyHint")} />
-      <fieldset class="game-filters" aria-label={t("selectedGames")}>
-        <Button
-          class="game-filter"
-          aria-pressed={!filters.games.length}
-          onClick={() => change({ games: [], match: "" })}
-        >
+      <details
+        class="game-filter-menu"
+        open={filterOpen}
+        onToggle={(event) => setFilterOpen(event.currentTarget.open)}
+      >
+        <summary>
           <ActionIcon name="grid" />
-          {t("allGames")}
-        </Button>
-        {catalog.map((game) => (
+          <strong>{t("selectedGames")}</strong>
+          <span>
+            {filters.games.length ? t("selectedCount", { n: filters.games.length }) : t("allGames")}
+          </span>
+          <ActionIcon name="chevron" />
+        </summary>
+        <fieldset class="game-filters" aria-label={t("selectedGames")}>
           <Button
             class="game-filter"
-            key={game.id}
-            aria-pressed={filters.games.includes(game.id)}
-            onClick={() =>
-              change({
-                games: filters.games.includes(game.id)
-                  ? filters.games.filter((value) => value !== game.id)
-                  : [...filters.games, game.id],
-                match: "",
-              })
-            }
+            aria-pressed={!filters.games.length}
+            onClick={() => change({ games: [], match: "" })}
           >
-            <img src={`/${game.id}.svg`} width="30" height="25" alt="" />
-            {gameTitle(catalog, game.id)}
-            {filters.games.includes(game.id) && <ActionIcon name="check" />}
+            <ActionIcon name="grid" />
+            {t("allGames")}
           </Button>
-        ))}
-      </fieldset>
+          {catalog.map((game) => (
+            <Button
+              class="game-filter"
+              key={game.id}
+              aria-pressed={filters.games.includes(game.id)}
+              onClick={() =>
+                change({
+                  games: filters.games.includes(game.id)
+                    ? filters.games.filter((value) => value !== game.id)
+                    : [...filters.games, game.id],
+                  match: "",
+                })
+              }
+            >
+              <img src={`/${game.id}.svg`} width="30" height="25" alt="" />
+              <span>{gameTitle(catalog, game.id)}</span>
+              <span class="filter-check" aria-hidden="true">
+                {filters.games.includes(game.id) && <ActionIcon name="check" />}
+              </span>
+            </Button>
+          ))}
+        </fieldset>
+      </details>
       <div class="history-filters">
         <label class="search-field">
           <ActionIcon name="search" />

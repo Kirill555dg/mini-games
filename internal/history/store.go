@@ -14,6 +14,7 @@ import (
 
 const Limit = 100
 const MaxBytes = 1024 * 1024
+const fileVersion = 3
 
 type Record struct {
 	ID         uint64       `json:"id"`
@@ -60,16 +61,13 @@ func Open(path string) (*Store, error) {
 	if json.Unmarshal(data, &version) != nil {
 		return nil, errors.New("invalid match history; preserve existing file")
 	}
-	var saved file
-	switch version.Version {
-	case 1:
-		saved, err = migrate(data)
-	case 2:
-		err = json.Unmarshal(data, &saved)
-	default:
-		err = errors.New("unsupported history version")
+	// Match history is disposable; incompatible older formats start empty.
+	// Availability observations use a separate store and are never reset here.
+	if version.Version > 0 && version.Version < fileVersion {
+		return s, nil
 	}
-	if err != nil || len(saved.Games) > Limit {
+	var saved file
+	if version.Version != fileVersion || json.Unmarshal(data, &saved) != nil || len(saved.Games) > Limit {
 		return nil, errors.New("invalid match history; preserve existing file")
 	}
 	var previous uint64
@@ -109,7 +107,7 @@ func (s *Store) Append(r Record) error {
 	var data []byte
 	var err error
 	for {
-		data, err = json.Marshal(file{2, r.ID, all})
+		data, err = json.Marshal(file{fileVersion, r.ID, all})
 		if err != nil {
 			return err
 		}
@@ -143,62 +141,4 @@ func (s *Store) Append(r Record) error {
 	s.records = all
 	s.serial = r.ID
 	return nil
-}
-
-func migrate(data []byte) (file, error) {
-	var old struct {
-		Version int    `json:"version"`
-		Serial  uint64 `json:"serial"`
-		Games   []struct {
-			ID         uint64    `json:"id"`
-			FinishedAt time.Time `json:"finishedAt"`
-			Code       string    `json:"code"`
-			Size       int       `json:"size"`
-			X          string    `json:"x"`
-			O          string    `json:"o"`
-			Result     string    `json:"result"`
-			Reason     string    `json:"reason"`
-			Moves      []struct {
-				Mark string `json:"mark"`
-				Cell int    `json:"cell"`
-			} `json:"moves"`
-		} `json:"games"`
-	}
-	if err := json.Unmarshal(data, &old); err != nil {
-		return file{}, err
-	}
-	out := file{Version: 2, Serial: old.Serial, Games: []Record{}}
-	for _, r := range old.Games {
-		if r.Size == 0 {
-			r.Size = 3
-		}
-		g, err := games.New("tictactoe", r.Size, 2)
-		if err != nil {
-			return file{}, err
-		}
-		for i, m := range r.Moves {
-			mark := "X"
-			if i%2 == 1 {
-				mark = "O"
-			}
-			if m.Mark != mark || g.Apply(i%2, engine.Action{Kind: "move", Cell: m.Cell}) != nil {
-				return file{}, errors.New("invalid legacy moves")
-			}
-		}
-		winner := engine.Draw
-		switch r.Result {
-		case "X":
-			winner = 0
-		case "O":
-			winner = 1
-		case "draw", "abandoned":
-		default:
-			return file{}, errors.New("invalid legacy result")
-		}
-		state := g.View(-1)
-		state.Phase = engine.Finished
-		state.Winner = winner
-		out.Games = append(out.Games, Record{ID: r.ID, FinishedAt: r.FinishedAt, Code: r.Code, Game: "tictactoe", Size: r.Size, Players: []string{r.X, r.O}, Winner: winner, Reason: r.Reason, State: state})
-	}
-	return out, nil
 }

@@ -2,7 +2,8 @@
 
 A small multiplayer mini-game site. Go's standard library on the server, Preact and TypeScript in the browser. Russian and English, light and dark themes, phone/tablet/desktop layouts. Original SVG illustrations and an MIT license.
 
-- Tic-tac-toe: 3×3 through 7×7. Win with three, four, or five in a row depending on the board.
+- Tic-tac-toe: a quick classic 3×3 round.
+- Nine boards: nested tic-tac-toe with forced destinations and closed local boards. [Rules and design research](docs/game-design.md)
 - Sea battle: the full classic 10×10 fleet, plus a quick 8×8 mode. Drag, rotate and move ships, or randomize placement.
 - Four in a row: a gravity-based two-player game.
 - Dots and boxes: two to four players, captured boxes and extra turns.
@@ -49,9 +50,9 @@ There is no product limit of two rooms or a fixed number of spectators. Admissio
 
 Use service-manager limits in production: a low CPU quota, hard memory limit, no swap allocation and low scheduling priority. Application admission supplements these operating-system limits. The public status page shows current application uptime, response time and 30 UTC days of application self-observations. A sample runs once per minute. Only short consecutive sample intervals count as observed running time; restarts, long gaps and time before collection remain unknown. This is not an external availability guarantee. Daily API health is green with no observed server errors, yellow with some, and red when every observed request failed with a server error; missing coverage is separate from that health classification.
 
-Browser identities are opaque private cookies; only hashes remain in memory. Fleet placement never appears in opponents' snapshots, spectator events, history or logs. The history retains the last 100 completed games with names and public moves, using atomic replacement. The previous tic-tac-toe history format is read without rewriting it on startup. A lost connection has 90 seconds to return. Leaving a two-player match forfeits it; leaving a larger match abandons it.
+Browser identities are opaque private cookies; only hashes remain in memory. Fleet placement never appears in opponents' snapshots, spectator events, history or logs. The history retains the last 100 completed games with names and public moves, using atomic replacement. A lost connection has 90 seconds to return. Leaving a two-player match forfeits it; leaving a larger match abandons it.
 
-Sea battle drafts use stable ship IDs from the server-supplied full fleet. `fleet` validates and atomically replaces a partial draft; `deploy` validates the complete fleet and confirms readiness in one action. Invalid positions leave the previous draft unchanged. Only the owning player receives draft placements, fleet lengths and their required separation. Side swaps are locked before placement starts. Legacy sequential placement actions remain supported, and completed 8×8 records remain readable.
+Sea battle drafts use stable ship IDs from the server-supplied full fleet. `fleet` validates and atomically replaces a partial draft; `deploy` validates the complete fleet and confirms readiness in one action. Invalid positions leave the previous draft unchanged. Only the owning player receives draft placements, fleet lengths and their required separation. Side swaps are locked before placement starts.
 
 Optional `-access-log` records only a fixed route category, status and timing. It does not record IP addresses, request URLs, cookies, names or bodies. Optional `-metrics FILE` retains up to 14 days of anonymous page-view and visit counters; the bounded browser cache lasts 30 minutes and is never persisted. The private rolling HTTP counters reset on process restart. Public daily health counts and sampled running time survive restarts in a separate, atomically replaced `status.json` beside the configured match-history file, limited to 30 days and 32 KiB. An empty `-history` path keeps both histories in memory. `/internal/metrics` is for a private Unix socket consumer and must not be routed publicly.
 
@@ -60,11 +61,13 @@ Optional `-access-log` records only a fixed route category, status and timing. I
 Commit reviewed source, then build on your development machine. Go cross-compiles static Linux binaries from macOS; the server needs no toolchain.
 
 ```sh
-python3 tools/build-release.py --version v0.2.0
-gh release create v0.2.0 dist/mini-games-linux-amd64.tar.gz dist/mini-games-linux-arm64.tar.gz dist/SHA256SUMS --title v0.2.0 --generate-notes
+python3 tools/build-release.py --version v0.3.0
+gh release create v0.3.0 dist/mini-games-linux-amd64.tar.gz dist/mini-games-linux-arm64.tar.gz dist/SHA256SUMS --title v0.3.0 --generate-notes
 ```
 
 Each archive includes the stripped binary, minified local static assets, source revision, file hashes and license notices. Pin the archive SHA256 in the consuming deployment before installing. Hosting integrations and machine-specific configuration belong in the consuming project.
+
+Match history is disposable: retired formats are reset instead of migrated. This release starts a new match history. Application availability is stored separately and retains its rolling 30-day window across updates and restarts.
 
 Production runs `mini-games` with `DOMAIN` set and its Unix socket accessible only to the web server. Serve the packaged static directory and route `/game-api/` to that socket. Never expose `/internal/metrics` on the public web server. The default paths are `/run/mini-games/game.sock` and `/var/lib/mini-games/stats.json`; `-socket` and `-history` can override them.
 

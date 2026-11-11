@@ -1,4 +1,6 @@
 import { useState } from "preact/hooks";
+import { regionForCell } from "@/entities/game/nested-board";
+import { UltimateBoard } from "@/entities/game/ultimate-board";
 import type { Command, GameSpec, GameState } from "@/shared/api/game-api";
 import { GAME_STATE, NAVAL_CELL } from "@/shared/api/protocol.generated";
 import { t, translated } from "@/shared/i18n/i18n";
@@ -28,6 +30,8 @@ export function GameBoard({
   own = false,
 }: Props) {
   const [focused, setFocused] = useState(0);
+  if (game === "ultimate")
+    return <UltimateBoard state={state} enabled={enabled} play={(cell) => onMove({ cell })} />;
   if (game === "dotsboxes") return <DotsBoard state={state} enabled={enabled} onMove={onMove} />;
   const naval = game === "battleship";
   const values = naval
@@ -61,13 +65,16 @@ export function GameBoard({
             : game === "connectfour"
               ? !values[index % state.width]
               : !value);
-        const hull = naval && own && actor >= 0 && (value === NAVAL_CELL.ship || value === NAVAL_CELL.hit);
+        const sunk = naval && value === NAVAL_CELL.sunk;
+        const hit = naval && (value === NAVAL_CELL.hit || sunk);
+        const hull =
+          naval && (sunk || (own && actor >= 0 && (value === NAVAL_CELL.ship || value === NAVAL_CELL.hit)));
         const connected = (row: number, column: number) =>
           row >= 0 &&
           column >= 0 &&
           row < state.height &&
           column < state.width &&
-          [NAVAL_CELL.ship, NAVAL_CELL.hit].includes(values[row * state.width + column]);
+          [NAVAL_CELL.ship, NAVAL_CELL.hit, NAVAL_CELL.sunk].includes(values[row * state.width + column]);
         const row = Math.floor(index / state.width),
           column = index % state.width;
         const segments = hull
@@ -86,11 +93,15 @@ export function GameBoard({
           ? t(
               value === NAVAL_CELL.ship
                 ? "ship"
-                : value === NAVAL_CELL.hit
-                  ? "hit"
-                  : value === NAVAL_CELL.miss
-                    ? "miss"
-                    : "unknown",
+                : sunk
+                  ? "shipSunk"
+                  : value === NAVAL_CELL.clear
+                    ? "clearWater"
+                    : value === NAVAL_CELL.hit
+                      ? "hit"
+                      : value === NAVAL_CELL.miss
+                        ? "miss"
+                        : "unknown",
             )
           : value
             ? t("cellPlayer", { n: value })
@@ -99,7 +110,7 @@ export function GameBoard({
           <button
             type="button"
             key={index}
-            class={`cell player-${value} ${naval && value === NAVAL_CELL.ship ? "ship" : ""} ${value === NAVAL_CELL.hit && naval ? "hit" : ""} ${state.line?.includes(index) ? "winning" : ""} ${state.moves?.at(-1)?.cell === index && !naval ? "last-move" : ""}`}
+            class={`cell player-${value} ${naval && value === NAVAL_CELL.ship ? "ship" : ""} ${hit ? "hit" : ""} ${sunk ? "sunk" : ""} ${state.line?.includes(index) ? "winning" : ""} ${state.moves?.at(-1)?.cell === index && !naval ? "last-move" : ""}`}
             aria-label={`${cell}: ${label}`}
             aria-disabled={!allowed}
             tabIndex={focused === index ? 0 : -1}
@@ -114,13 +125,13 @@ export function GameBoard({
               <>
                 {hull && (
                   <span class={`ship-segment ${segments}`} aria-hidden="true">
-                    {value !== NAVAL_CELL.hit && <span class="ship-porthole" />}
+                    {value === NAVAL_CELL.ship && <span class="ship-porthole" />}
                   </span>
                 )}
-                {value === NAVAL_CELL.hit ? (
+                {hit ? (
                   <Mark player={1} />
-                ) : value === NAVAL_CELL.miss ? (
-                  <span class="miss" />
+                ) : value === NAVAL_CELL.miss || value === NAVAL_CELL.clear ? (
+                  <span class={`miss ${value === NAVAL_CELL.clear ? "clear-water" : ""}`} />
                 ) : null}
               </>
             ) : game === "connectfour" ? (
@@ -188,6 +199,7 @@ export function replayState(game: string, state: GameState, count: number, viewe
   const copy: GameState = {
     ...state,
     line: [],
+    regionLine: [],
     boxes: [],
     scores: [],
     moves: (state.moves || []).slice(0, count),
@@ -195,18 +207,29 @@ export function replayState(game: string, state: GameState, count: number, viewe
   if (game === "battleship") {
     copy.own = Array(state.width * state.height).fill(0);
     copy.enemy = [...copy.own];
-    for (const move of copy.moves || [])
-      (move.player === Math.max(viewer, 0) ? copy.enemy : copy.own)[move.cell] = move.hit
-        ? NAVAL_CELL.hit
-        : NAVAL_CELL.miss;
+    for (const move of copy.moves || []) {
+      const field = move.player === Math.max(viewer, 0) ? copy.enemy : copy.own;
+      field[move.cell] = move.hit ? NAVAL_CELL.hit : NAVAL_CELL.miss;
+      for (const cell of move.sunk || []) field[cell] = NAVAL_CELL.sunk;
+      for (const cell of move.water || []) field[cell] = NAVAL_CELL.clear;
+    }
   } else {
     copy.board = Array(state.board?.length || 0).fill(0);
     if (game === "dotsboxes") {
       copy.boxes = Array(state.width * state.height).fill(0);
       copy.scores = Array(state.scores?.length || 4).fill(0);
     }
+    if (game === "ultimate") {
+      copy.regions = Array(state.regions?.length || 0).fill(0);
+      copy.phase = GAME_STATE.playing;
+      copy.winner = GAME_STATE.noWinner;
+      copy.activeBoard = copy.moves?.at(-1)?.nextBoard;
+      copy.turn = copy.moves?.length ? 1 - copy.moves[copy.moves.length - 1].player : 0;
+    }
     for (const move of copy.moves || []) {
       copy.board[move.cell] = move.player + 1;
+      if (game === "ultimate" && copy.regions && state.regionSize && move.regionResult)
+        copy.regions[regionForCell(move.cell, state.width, state.regionSize)] = move.regionResult;
       for (const box of move.boxes || []) {
         if (copy.boxes && copy.scores) {
           copy.boxes[box] = move.player + 1;

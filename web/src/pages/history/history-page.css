@@ -1,0 +1,89 @@
+@layer components {
+  .game-filter-menu {
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    background: var(--surface);
+    margin-bottom: 18px;
+  }
+  .game-filter-menu > summary {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 13px 16px;
+    list-style: none;
+    font-size: 14px;
+  }
+  .game-filter-menu > summary::-webkit-details-marker {
+    display: none;
+  }
+  .game-filter-menu > summary > span:not(.action-icon) {
+    margin-left: auto;
+    color: var(--muted);
+    font-size: 12px;
+  }
+  .game-filter-menu[open] > summary > .action-icon:last-child {
+    transform: rotate(180deg);
+  }
+  .game-filters {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+    padding: 0 12px 12px;
+  }
+  .game-filter {
+    justify-content: start;
+    min-width: 0;
+    min-height: 44px;
+    padding: 8px 12px;
+    gap: 10px;
+    font-size: 13px;
+    text-align: left;
+  }
+  .game-filter img {
+    object-fit: contain;
+    flex-shrink: 0;
+  }
+  .game-filter > span:not(.action-icon, .filter-check) {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .filter-check {
+    margin-left: auto;
+    width: 20px;
+    height: 20px;
+    flex: 0 0 auto;
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    display: grid;
+    place-items: center;
+  }
+  .filter-check .action-icon {
+    width: 16px;
+    height: 16px;
+  }
+  .game-filter[aria-pressed="true"] {
+    background: var(--tint);
+    color: var(--primary);
+    border-color: var(--primary);
+  }
+}
+@layer responsive {
+  @media (max-width: 760px) {
+    .game-filters {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 0;
+      padding: 0 12px 8px;
+    }
+    .game-filter {
+      border: 0;
+      border-radius: 8px;
+      box-shadow: none;
+      padding: 10px;
+    }
+    .game-filter img {
+      width: 28px;
+      height: 24px;
+    }
+  }
+}

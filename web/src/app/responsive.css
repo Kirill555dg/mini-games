@@ -7,36 +7,6 @@
       font-size: 0;
       gap: 0;
     }
-    .game-card {
-      padding: 20px;
-    }
-    .game-card-main {
-      gap: 16px;
-    }
-    .game-illustration {
-      flex-basis: 108px;
-      width: 108px;
-      height: 90px;
-    }
-    .game-card-title {
-      flex-wrap: wrap;
-      gap: 5px 10px;
-    }
-    .game-card-title h2 {
-      font-size: 21px;
-    }
-    .inline-entry {
-      grid-template-columns: 1fr;
-      gap: 16px;
-    }
-    .join-heading {
-      display: flex;
-      align-items: baseline;
-      gap: 20px;
-    }
-    .join-heading p {
-      max-width: none;
-    }
   }
   @media (max-width: 760px) {
     .site-header {
@@ -104,17 +74,6 @@
       grid-template-columns: 1fr;
       gap: 14px;
     }
-    .game-card {
-      padding: 20px;
-    }
-    .game-illustration {
-      flex-basis: 118px;
-      width: 118px;
-      height: 98px;
-    }
-    .game-card-title {
-      flex-wrap: nowrap;
-    }
     .room-row {
       flex-wrap: wrap;
       gap: 12px;
@@ -131,128 +90,6 @@
     }
     .room-code-group .room-code {
       flex: 1;
-    }
-    .in-room .site-header {
-      display: flex;
-      min-height: 58px;
-      padding-block: 9px;
-      gap: 8px;
-    }
-    .in-room .brand {
-      font-size: 18px;
-    }
-    .in-room .connection {
-      font-size: 0;
-      gap: 0;
-    }
-    .in-room main {
-      padding-top: 16px;
-    }
-    .room-heading {
-      align-items: flex-start;
-      gap: 12px;
-    }
-    .room-heading h1 {
-      font-size: 25px;
-    }
-    .room-invitation {
-      flex-wrap: wrap;
-      justify-content: flex-end;
-      gap: 6px;
-    }
-    .room-code-copy .room-code {
-      font-size: 15px;
-      letter-spacing: 1px;
-    }
-    .room-invitation .button {
-      min-height: 36px;
-      padding: 7px 9px;
-      font-size: 12px;
-    }
-    .room-invitation .action-icon {
-      width: 16px;
-      height: 16px;
-    }
-    .game-status {
-      font-size: 13px;
-      padding: 10px 12px;
-      margin: 14px 0;
-    }
-    .room-layout {
-      display: flex;
-      flex-direction: column;
-      gap: 14px;
-    }
-    .room-sidebar {
-      order: -1;
-      width: 100%;
-      padding: 0;
-      border: 0;
-      background: transparent;
-    }
-    .seat-list {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-    }
-    .seat {
-      flex: 1;
-      min-width: 120px;
-      padding: 10px;
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      background: var(--surface);
-    }
-    .seat:last-child {
-      border: 1px solid var(--border);
-    }
-    .seat-number {
-      flex-basis: 28px;
-      height: 28px;
-    }
-    .seat strong {
-      font-size: 12px;
-    }
-    .seat-presence {
-      font-size: 11px;
-    }
-    .spectator-count {
-      display: inline-flex;
-      margin-top: 10px;
-    }
-    .spectator-invite {
-      margin-top: 8px;
-      float: right;
-    }
-    .spectator-invite .button {
-      min-height: 30px;
-      padding: 4px 8px;
-      font-size: 11px;
-    }
-    .spectator-invite .action-icon {
-      width: 14px;
-      height: 14px;
-    }
-    .play-area {
-      width: 100%;
-    }
-    .preparation {
-      padding: 18px 14px;
-    }
-    .side-option {
-      min-width: 110px;
-    }
-    .game-filters {
-      gap: 8px;
-    }
-    .game-filter {
-      padding: 8px 10px;
-      min-height: 44px;
-      font-size: 12px;
-    }
-    .game-filter img {
-      width: 26px;
-      height: 22px;
     }
     .match summary {
       flex-wrap: wrap;
@@ -315,100 +152,8 @@
     .brand {
       font-size: 18px;
     }
-    .inline-entry {
-      padding: 20px;
-    }
-    .join-heading {
-      display: block;
-    }
-    .join-heading p {
-      margin-top: 6px;
-    }
-    .join-form {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      align-items: stretch;
-    }
-    .join-inputs {
-      grid-template-columns: 1fr;
-      gap: 12px;
-    }
-    .join-mode {
-      justify-content: space-between;
-      flex-wrap: wrap;
-    }
-    .join-form :where(.form-actions) .button {
-      width: 100%;
-    }
-    .game-card {
-      padding: 18px;
-    }
-    .game-card-main {
-      display: grid;
-      grid-template-columns: 88px minmax(0, 1fr);
-      gap: 8px 16px;
-      align-items: center;
-    }
-    .game-illustration {
-      width: 88px;
-      height: 74px;
-      grid-row: 1 / 3;
-    }
-    .game-card-content {
-      display: contents;
-    }
-    .game-card-title {
-      grid-column: 2;
-      flex-wrap: nowrap;
-      gap: 3px 8px;
-      margin: 0;
-      align-self: end;
-    }
-    .game-card-title h2 {
-      font-size: 19px;
-      min-width: 0;
-      flex-basis: auto;
-    }
-    .game-card-content > p {
-      grid-column: 2;
-      margin: 0;
-      align-self: start;
-      font-size: 12px;
-    }
-    .game-card-content > .actions {
-      grid-column: 1 / -1;
-      margin-top: 12px;
-    }
-    .game-card-content :where(.actions) > .button {
-      flex: 1;
-    }
-    .game-card .rules-button {
-      flex: 1;
-    }
     .entry-form {
       padding: 22px;
-    }
-    .room-heading {
-      flex-direction: column;
-      gap: 12px;
-    }
-    .room-invitation {
-      justify-content: flex-start;
-    }
-    .room-goal {
-      font-size: 12px;
-    }
-    .room-topline {
-      gap: 8px;
-    }
-    .room-topline .button {
-      font-size: 12px;
-      min-height: 38px;
-      padding: 7px 10px;
-    }
-    .room-topline .back-link {
-      padding-left: 0;
     }
     .availability-history {
       padding: 18px 16px;
@@ -460,57 +205,6 @@
     }
     .connection {
       font-size: 11px;
-    }
-    .game-card-main {
-      grid-template-columns: 72px minmax(0, 1fr);
-      gap: 8px 12px;
-    }
-    .game-illustration {
-      width: 72px;
-      height: 60px;
-    }
-    .game-card-title h2 {
-      font-size: 18px;
-    }
-    .seat-number {
-      display: none;
-    }
-    .inline-entry {
-      padding: 16px;
-    }
-  }
-  @media (max-height: 520px) and (min-width: 600px) {
-    .in-room .site-header {
-      min-height: 48px;
-      padding-block: 5px;
-    }
-    .in-room main {
-      padding-top: 10px;
-    }
-    .room-layout {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) 180px;
-      gap: 20px;
-    }
-    .room-sidebar {
-      order: 0;
-    }
-    .seat-list {
-      display: grid;
-    }
-    .room-topline {
-      margin-bottom: 8px;
-    }
-    .room-heading h1 {
-      font-size: 23px;
-    }
-    .room-goal {
-      margin-top: 2px;
-    }
-    .game-status {
-      margin: 10px 0;
-      min-height: 40px;
-      padding: 8px 12px;
     }
   }
   @media (prefers-reduced-motion: reduce) {

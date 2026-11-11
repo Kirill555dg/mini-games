@@ -1,0 +1,80 @@
+@layer games {
+  .ultimate-game {
+    width: min(100%, var(--board-size, 560px));
+  }
+  .ultimate-board {
+    width: 100%;
+    grid-template-columns: repeat(var(--regions-columns), minmax(0, 1fr));
+    grid-template-rows: repeat(var(--regions-columns), minmax(0, 1fr));
+    gap: 8px;
+    padding: 3px;
+  }
+  .ultimate-region {
+    position: relative;
+    min-width: 0;
+    min-height: 0;
+    background: var(--gridline);
+    border: 2px solid var(--gridline);
+    border-radius: 9px;
+    padding: 2px;
+    overflow: hidden;
+  }
+  .ultimate-region.is-target {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px var(--primary);
+  }
+  .ultimate-cells {
+    display: grid;
+    grid-template-columns: repeat(var(--region-size), minmax(0, 1fr));
+    grid-template-rows: repeat(var(--region-size), minmax(0, 1fr));
+    width: 100%;
+    height: 100%;
+    gap: 1px;
+  }
+  .ultimate-cells .cell {
+    aspect-ratio: auto;
+    padding: 15%;
+  }
+  .ultimate-cells .cell.last-move::after {
+    width: 4px;
+    height: 4px;
+  }
+  .ultimate-region.is-closed {
+    border-color: var(--player, var(--border));
+  }
+  .ultimate-region.is-winning {
+    outline: 3px solid var(--success);
+    outline-offset: -3px;
+  }
+  .is-closed .ultimate-cells {
+    opacity: 0.25;
+  }
+  .region-result {
+    position: absolute;
+    inset: 20%;
+    display: grid;
+    place-items: center;
+    pointer-events: none;
+    font-size: clamp(22px, 6vw, 64px);
+    color: var(--muted);
+  }
+  .region-result .mark {
+    width: 100%;
+    height: 100%;
+  }
+  .ultimate-hint {
+    margin-top: 7px;
+    color: var(--muted);
+    text-align: center;
+    font-size: 12px;
+  }
+  @media (max-width: 500px) {
+    .ultimate-board {
+      gap: 5px;
+    }
+    .ultimate-region {
+      border-radius: 6px;
+      padding: 1px;
+    }
+  }
+}

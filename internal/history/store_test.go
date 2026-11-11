@@ -40,31 +40,36 @@ func TestBoundedAtomicHistoryAndRestart(t *testing.T) {
 		t.Fatal("list aliases store")
 	}
 }
-func TestLegacyMigrationAndCorruptPreservation(t *testing.T) {
+func TestRetiredMatchFormatsStartEmpty(t *testing.T) {
+	for version := 1; version < fileVersion; version++ {
+		p := filepath.Join(t.TempDir(), "stats.json")
+		data, _ := json.Marshal(map[string]any{"version": version, "serial": 8, "games": []any{map[string]any{"retired": true}}})
+		if err := os.WriteFile(p, data, 0600); err != nil {
+			t.Fatal(err)
+		}
+		s, err := Open(p)
+		if err != nil || len(s.List()) != 0 {
+			t.Fatal("retired history was not discarded")
+		}
+		if err := s.Append(sample()); err != nil {
+			t.Fatal(err)
+		}
+		data, _ = os.ReadFile(p)
+		var current file
+		if json.Unmarshal(data, &current) != nil || current.Version != fileVersion || len(current.Games) != 1 || current.Games[0].ID != 1 {
+			t.Fatal("new history did not replace retired format")
+		}
+	}
+}
+func TestCorruptCurrentHistoryIsPreserved(t *testing.T) {
 	p := filepath.Join(t.TempDir(), "stats.json")
-	legacy := `{"version":1,"serial":1,"games":[{"id":1,"code":"1234","x":"Один","o":"Два","result":"X","reason":"left","moves":[{"mark":"X","cell":0}]}]}`
-	if os.WriteFile(p, []byte(legacy), 0600) != nil {
-		t.Fatal("fixture")
+	r := sample()
+	r.ID = 1
+	r.State.Phase = engine.Playing
+	data, _ := json.Marshal(file{fileVersion, 1, []Record{r}})
+	if err := os.WriteFile(p, data, 0600); err != nil {
+		t.Fatal(err)
 	}
-	s, err := Open(p)
-	if err != nil || len(s.List()) != 1 || s.List()[0].Size != 3 {
-		t.Fatal("legacy migration failed")
-	}
-	before, _ := os.ReadFile(p)
-	if string(before) != legacy {
-		t.Fatal("read rewrote history")
-	}
-	if s.Append(sample()) != nil {
-		t.Fatal("append after migration")
-	}
-	var f file
-	data, _ := os.ReadFile(p)
-	if json.Unmarshal(data, &f) != nil || f.Version != 2 || len(f.Games) != 2 {
-		t.Fatal("migration was not persisted on next result")
-	}
-	f.Games[0].State.Phase = engine.Playing
-	data, _ = json.Marshal(f)
-	_ = os.WriteFile(p, data, 0600)
 	if _, err := Open(p); err == nil {
 		t.Fatal("corrupt terminal state accepted")
 	}

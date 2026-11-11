@@ -48,8 +48,8 @@ func TestNewPartyHasNewCodeAndRequiresSetup(t *testing.T) {
 		t.Fatal("reenter reset completed game")
 	}
 	side := 1
-	next := command(t, h, 1, Command{Action: "create", From: id, Name: "Первый", Game: "tictactoe", Size: 6, Players: 2, Seat: &side})
-	if next.Room.ID == id || next.Room.Started || next.Room.Size != 6 || next.Role != 1 || len(next.State.Moves) != 0 {
+	next := command(t, h, 1, Command{Action: "create", From: id, Name: "Первый", Game: "ultimate", Players: 2, Seat: &side})
+	if next.Room.ID == id || next.Room.Started || next.Room.Game != "ultimate" || next.Role != 1 || len(next.State.Moves) != 0 {
 		t.Fatal("new party did not create a clean configurable room")
 	}
 	old, err := h.View(id, key(2))
@@ -64,6 +64,17 @@ func TestNewPartyHasNewCodeAndRequiresSetup(t *testing.T) {
 	command(t, h, 2, Command{Action: "ready", Room: next.Room.ID, Round: 1})
 	if _, err := h.Do(key(2), Command{Action: "move", Room: next.Room.ID, Round: 2, Cell: 0}); err == nil {
 		t.Fatal("stale round accepted")
+	}
+}
+func TestFinishedRoomsLeaveLobbyButKeepTheirInvitation(t *testing.T) {
+	h := newTest(t, "")
+	v := win(t, h, pair(t, h))
+	if lobby := h.Lobby(); lobby.TotalRooms != 0 || len(lobby.Rooms) != 0 {
+		t.Fatal("completed games still advertised as open rooms")
+	}
+	old, err := h.View(v.Room.ID, key(2))
+	if err != nil || !old.Room.Finished {
+		t.Fatal("removing a lobby entry invalidated the room's invitation")
 	}
 }
 func TestSwapNeedsConsentAndClearsReadiness(t *testing.T) {
@@ -163,7 +174,7 @@ func TestDisconnectGraceAndForfeit(t *testing.T) {
 	now = now.Add(time.Second)
 	h.mu.Unlock()
 	lobby := h.Lobby()
-	if !lobby.Rooms[0].Finished || len(h.History()) != 1 || h.History()[0].Winner != 0 {
+	if len(lobby.Rooms) != 0 || len(h.History()) != 1 || h.History()[0].Winner != 0 {
 		t.Fatal("timeout must award surviving player")
 	}
 	h.Unsubscribe(sub)
